@@ -861,12 +861,6 @@ Never upload release keystores or signing credentials.
 
 ---
 
-## License
-
-[Add project license here]
-
----
-
 ## Author
 
 **Yash Takalkar**
