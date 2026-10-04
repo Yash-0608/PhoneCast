@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">PhoneCast</string>
+    <string name="accessibility_service_description">Allows PhoneCast to perform touch and text actions requested by your authorized laptop session.</string>
+</resources>
