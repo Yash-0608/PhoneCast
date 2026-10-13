@@ -798,6 +798,56 @@ export function handleConnectionEvent(
             };
 
             window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            window.dispatchEvent(new Event("phonecast-call-data-updated"));
+            break;
+
+
+        case "PHONE_CONTACTS_RESULT":
+            state.contacts = Array.isArray(event.contacts)
+                ? event.contacts
+                    .filter(item => item && typeof item === "object")
+                    .map(item => ({
+                        id: safeString(item.id),
+                        name: safeString(item.name, "Unknown contact"),
+                        number: safeString(item.number)
+                    }))
+                : [];
+
+            state.phoneActionStatus = {
+                action: "GET_CONTACTS",
+                success: Boolean(event.success),
+                message: event.success
+                    ? "Contacts loaded."
+                    : safeString(event.message, "Contacts could not be loaded.")
+            };
+
+            window.dispatchEvent(new Event("phonecast-call-data-updated"));
+            break;
+
+
+        case "PHONE_RECENT_CALLS_RESULT":
+            state.recentCalls = Array.isArray(event.calls)
+                ? event.calls
+                    .filter(item => item && typeof item === "object")
+                    .map(item => ({
+                        id: safeString(item.id),
+                        name: safeString(item.name, "Unknown caller"),
+                        number: safeString(item.number),
+                        type: safeString(item.type),
+                        date: safeNumber(item.date, 0),
+                        durationSeconds: safeNumber(item.durationSeconds, 0)
+                    }))
+                : [];
+
+            state.phoneActionStatus = {
+                action: "GET_RECENT_CALLS",
+                success: Boolean(event.success),
+                message: event.success
+                    ? "Recent calls loaded."
+                    : safeString(event.message, "Call history could not be loaded.")
+            };
+
+            window.dispatchEvent(new Event("phonecast-call-data-updated"));
             break;
 
 
@@ -1158,8 +1208,11 @@ function resetConnectionState() {
         null;
 
     state.notifications = [];
+    state.contacts = [];
+    state.recentCalls = [];
     state.phoneActionStatus = null;
     window.dispatchEvent(new Event("phonecast-notifications-updated"));
+    window.dispatchEvent(new Event("phonecast-call-data-updated"));
 
     stopVideoState(
         false
