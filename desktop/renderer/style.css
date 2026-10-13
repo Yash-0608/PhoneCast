@@ -4664,3 +4664,65 @@ body {
     width: 18px;
     height: 18px;
 }
+
+
+
+/* Shared atmosphere for the existing desktop pages (not just the viewer). */
+.page-shell {
+    background:
+        linear-gradient(115deg, rgba(12, 9, 7, .88), rgba(17, 11, 8, .74)),
+        url("./assets/phonecast-warm-mountains.svg") center / cover no-repeat;
+}
+
+.welcome-page {
+    background:
+        linear-gradient(105deg, rgba(12, 9, 7, .94) 0%, rgba(18, 12, 8, .74) 52%, rgba(18, 12, 8, .40) 100%),
+        url("./assets/phonecast-warm-mountains.svg") center / cover no-repeat;
+}
+
+.home-shell {
+    background:
+        linear-gradient(112deg, rgba(12, 9, 7, .92), rgba(17, 11, 8, .90)),
+        url("./assets/phonecast-warm-mountains.svg") center / cover no-repeat;
+}
+
+.sidebar {
+    border-right-color: rgba(215, 164, 91, .17);
+    background: linear-gradient(180deg, rgba(22, 16, 11, .97), rgba(11, 8, 6, .96));
+}
+
+.sidebar-brand,
+.sidebar-brand strong {
+    color: #F4E5CF;
+}
+
+.sidebar .nav-item.active,
+.sidebar a.active {
+    border-color: rgba(215, 164, 91, .50);
+    background: linear-gradient(100deg, rgba(175, 112, 49, .22), rgba(92, 54, 28, .14));
+    box-shadow: inset 2px 0 0 #D7A45B;
+}
+
+.home-main,
+.home-card,
+.connection-card,
+.activity-card,
+.setup-card,
+.settings-card,
+.history-card {
+    border-color: rgba(215, 164, 91, .17);
+}
+
+.page-shell .primary-button,
+.page-shell .welcome-button {
+    border-color: rgba(240, 199, 133, .58);
+    background: linear-gradient(110deg, #B97D3E, #EBC17C);
+    color: #21150D;
+    box-shadow: 0 10px 28px rgba(144, 86, 39, .16);
+}
+
+.page-shell .primary-button:hover,
+.page-shell .welcome-button:hover {
+    background: linear-gradient(110deg, #D7A45B, #F6DDAA);
+}
+
