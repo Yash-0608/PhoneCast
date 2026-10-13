@@ -34,6 +34,12 @@ export const state = {
         calls: [],
         contacts: [],
         notifications: [],
+        callsLoaded: false,
+        contactsLoaded: false,
+        callsLoading: false,
+        contactsLoading: false,
+        notificationsLoaded: false,
+        notificationsLoading: false,
         notificationAccessGranted: false,
         lastCommandError: null,
         lastReplyResult: null
