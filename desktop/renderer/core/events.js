@@ -962,6 +962,8 @@ export function handleConnectionEvent(
                 Array.isArray(event.calls)
                     ? event.calls
                     : [];
+            state.phoneData.callsLoaded = event.success !== false;
+            state.phoneData.callsLoading = false;
 
             window.dispatchEvent(
                 new CustomEvent(
@@ -979,6 +981,8 @@ export function handleConnectionEvent(
                 Array.isArray(event.contacts)
                     ? event.contacts
                     : [];
+            state.phoneData.contactsLoaded = event.success !== false;
+            state.phoneData.contactsLoading = false;
 
             window.dispatchEvent(
                 new CustomEvent(
@@ -993,6 +997,8 @@ export function handleConnectionEvent(
         case "NOTIFICATION_SNAPSHOT":
 
             state.phoneData.notificationAccessGranted = true;
+            state.phoneData.notificationsLoaded = event.success !== false;
+            state.phoneData.notificationsLoading = false;
 
             state.phoneData.notifications =
                 Array.isArray(event.notifications)
@@ -1055,6 +1061,8 @@ export function handleConnectionEvent(
         case "NOTIFICATION_ACCESS_REQUIRED":
 
             state.phoneData.notificationAccessGranted = false;
+            state.phoneData.notificationsLoaded = false;
+            state.phoneData.notificationsLoading = false;
 
             window.dispatchEvent(
                 new CustomEvent(
@@ -1069,6 +1077,7 @@ export function handleConnectionEvent(
         case "NOTIFICATION_REPLY_RESULT":
 
             state.phoneData.lastReplyResult = event;
+            state.phoneData.notificationsLoading = false;
 
             window.dispatchEvent(
                 new CustomEvent(
@@ -1089,6 +1098,19 @@ export function handleConnectionEvent(
                     "Phone command could not be completed."
                 );
 
+            const failedCapability =
+                safeString(event.capability || event.command, "");
+
+            if (failedCapability.includes("CALL")) {
+                state.phoneData.callsLoading = false;
+            }
+            if (failedCapability.includes("CONTACT")) {
+                state.phoneData.contactsLoading = false;
+            }
+            if (failedCapability.includes("NOTIFICATION")) {
+                state.phoneData.notificationsLoading = false;
+            }
+
             window.dispatchEvent(
                 new CustomEvent(
                     "phonecast:phone-data",
@@ -1102,6 +1124,7 @@ export function handleConnectionEvent(
         case "PHONE_COMMAND_RESULT":
 
             state.phoneData.lastCommandError = null;
+            state.phoneData.notificationsLoading = false;
 
             window.dispatchEvent(
                 new CustomEvent(
