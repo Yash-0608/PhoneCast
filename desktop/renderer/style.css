@@ -4178,3 +4178,202 @@ img {
         grid-column: span 2;
     }
 }
+
+
+
+/* ============================================================
+   LIVE PHONE NOTIFICATION LIST
+   ============================================================ */
+
+.phonecast-notification-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: auto;
+    border-top: 1px solid rgba(117, 170, 204, .11);
+    scrollbar-color: rgba(68, 130, 166, .36) transparent;
+    scrollbar-width: thin;
+}
+
+.phonecast-notification-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    padding: 12px 5px;
+    border: 0;
+    border-bottom: 1px solid rgba(117, 170, 204, .10);
+    border-radius: 0;
+    color: #dbeaf5;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+
+.phonecast-notification-row:hover {
+    background: rgba(0, 168, 255, .055);
+}
+
+.phonecast-notification-row.active {
+    background: linear-gradient(90deg, rgba(0, 168, 255, .15), rgba(0, 168, 255, .025));
+    box-shadow: inset 2px 0 0 #00a8ff;
+}
+
+.notification-app-mark {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(0, 168, 255, .25);
+    border-radius: 11px;
+    color: #eaf7ff;
+    background: linear-gradient(145deg, rgba(0, 168, 255, .23), rgba(0, 168, 255, .055));
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.notification-row-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.notification-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+
+.notification-row-top strong {
+    overflow: hidden;
+    color: #a9c5d7;
+    font-size: 9px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notification-row-top time {
+    flex: 0 0 auto;
+    color: #718ea3;
+    font-size: 8px;
+}
+
+.notification-row-title {
+    overflow: hidden;
+    color: #e5f2fb;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.notification-row-preview {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #8fa7b8;
+    font-size: 10px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.notification-row-copy small {
+    color: #5dbbff;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: .6px;
+}
+
+.notification-empty-state {
+    min-height: 230px;
+}
+
+.message-detail-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(117, 170, 204, .12);
+}
+
+.message-detail-heading h3 {
+    margin: 0;
+    color: #eef7ff;
+    font-size: 15px;
+    line-height: 1.35;
+}
+
+.message-detail-heading time {
+    color: #7894a8;
+    font-size: 9px;
+}
+
+.message-detail-body {
+    min-height: 120px;
+    color: #c5d8e6;
+    font-size: 11px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.message-detail-body p {
+    margin: 0;
+}
+
+.message-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(117, 170, 204, .12);
+}
+
+.integration-pill.reply-available {
+    border-color: rgba(24, 199, 123, .22);
+    color: #80e0b0;
+    background: rgba(24, 199, 123, .06);
+}
+
+.notification-dismiss-button {
+    min-height: 28px;
+}
+
+.message-reply-composer {
+    align-items: stretch;
+}
+
+.message-reply-composer textarea.workspace-input {
+    height: auto;
+    min-height: 68px;
+    padding: 9px 11px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.message-reply-composer .workspace-primary-button {
+    align-self: end;
+    min-height: 38px;
+}
+
+.message-reply-composer .workspace-primary-button:disabled {
+    opacity: .35;
+}
+
+@media (max-width: 1050px) {
+    .messages-list-card,
+    .message-conversation-card {
+        min-height: 300px;
+    }
+}
