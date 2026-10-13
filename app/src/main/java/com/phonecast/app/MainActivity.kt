@@ -102,6 +102,12 @@ class MainActivity : FragmentActivity() {
 
     private val activityDestroyed = AtomicBoolean(false)
 
+    /*
+     * Prevent repeated dialogs if several input messages arrive while the
+     * owner is being asked to enable accessibility in Android Settings.
+     */
+    private var accessibilityPromptVisible = false
+
     // =========================================================
     // SCREEN CAPTURE STATE
     // =========================================================
@@ -1010,19 +1016,76 @@ class MainActivity : FragmentActivity() {
 
     private fun notifyRemoteControlUnavailable() {
 
+        val accessibilityAvailable =
+            PhoneCastAccessibilityService.isEnabled()
+
         runOnUiThread {
-            Toast.makeText(
-                this,
-                "Enable PhoneCast in Accessibility settings to control this phone.",
-                Toast.LENGTH_LONG
-            ).show()
+
+            if (isFinishing || isDestroyed) {
+                return@runOnUiThread
+            }
+
+            if (!accessibilityAvailable) {
+
+                if (accessibilityPromptVisible) {
+                    return@runOnUiThread
+                }
+
+                accessibilityPromptVisible = true
+
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Enable PhoneCast remote control")
+                    .setMessage(
+                        "PhoneCast can display your screen, but Android remote touch and navigation " +
+                            "require the PhoneCast accessibility service. On the next screen, open " +
+                            "PhoneCast and switch the service on. Android requires you to approve " +
+                            "this manually; PhoneCast cannot enable it for you."
+                    )
+                    .setPositiveButton("Open Settings") { _, _ ->
+                        try {
+                            startActivity(
+                                Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                            )
+                        } catch (error: Exception) {
+                            Log.e(
+                                TAG,
+                                "Unable to open Accessibility settings.",
+                                error
+                            )
+                            Toast.makeText(
+                                this,
+                                "Open Settings > Accessibility > Installed apps > PhoneCast.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                    .setNegativeButton("Later", null)
+                    .setOnDismissListener {
+                        accessibilityPromptVisible = false
+                    }
+                    .show()
+
+            } else {
+                Toast.makeText(
+                    this,
+                    "PhoneCast could not apply that input. Try again, and make sure the phone screen is unlocked.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
         sendJsonToActiveLaptop(
             JSONObject().apply {
                 put("type", "REMOTE_CONTROL_UNAVAILABLE")
                 put("requestId", activeRequestId ?: "")
-                put("reason", "ACCESSIBILITY_SERVICE_DISABLED")
+                put(
+                    "reason",
+                    if (accessibilityAvailable) {
+                        "INPUT_DISPATCH_FAILED"
+                    } else {
+                        "ACCESSIBILITY_SERVICE_DISABLED"
+                    }
+                )
             }
         )
     }
