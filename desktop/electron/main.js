@@ -2779,6 +2779,7 @@ ipcMain.handle(
         if (
             ![
                 "INPUT_TOUCH",
+                "INPUT_SCROLL",
                 "INPUT_TEXT",
                 "INPUT_KEY"
             ].includes(message.type)
