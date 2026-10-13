@@ -1,53 +1,51 @@
 package com.phonecast.app.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
+private val PhoneCastWarmDarkScheme = darkColorScheme(
     primary = Purple80,
+    onPrimary = Color(0xFF20150C),
     secondary = PurpleGrey80,
-    tertiary = Pink80
+    onSecondary = Color(0xFF20150C),
+    tertiary = Pink80,
+    background = Color(0xFF0B0907),
+    onBackground = Color(0xFFF9F1E4),
+    surface = Color(0xFF17120D),
+    onSurface = Color(0xFFF1E3CF),
+    surfaceVariant = Color(0xFF211810),
+    onSurfaceVariant = Color(0xFFB5A18A),
+    outline = Color(0xFF3B2A1A)
 )
 
-private val LightColorScheme = lightColorScheme(
+private val PhoneCastWarmLightScheme = lightColorScheme(
     primary = Purple40,
+    onPrimary = Color(0xFFFFF8EF),
     secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    onSecondary = Color(0xFFFFF8EF),
+    tertiary = Pink40,
+    background = Color(0xFFF4EBDD),
+    onBackground = Color(0xFF211810),
+    surface = Color(0xFFFFF8EF),
+    onSurface = Color(0xFF211810),
+    surfaceVariant = Color(0xFFEADCC7),
+    onSurfaceVariant = Color(0xFF65513C),
+    outline = Color(0xFFB7A184)
 )
 
 @Composable
 fun PhoneCastTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val colorScheme = if (darkTheme) {
+        PhoneCastWarmDarkScheme
+    } else {
+        PhoneCastWarmLightScheme
     }
 
     MaterialTheme(
