@@ -67,6 +67,31 @@ function safeString(
 }
 
 
+
+function normalizePhoneNotification(item) {
+    if (!item || typeof item !== "object") {
+        return null;
+    }
+
+    const key = safeString(item.key).trim();
+    if (!key) {
+        return null;
+    }
+
+    return {
+        key,
+        packageName: safeString(item.packageName),
+        appName: safeString(item.appName, "App"),
+        title: safeString(item.title),
+        text: safeString(item.text),
+        postTime: safeNumber(item.postTime, 0),
+        hasReplyAction: Boolean(item.hasReplyAction),
+        replyActionTitle: safeString(item.replyActionTitle),
+        isOngoing: Boolean(item.isOngoing)
+    };
+}
+
+
 function clearDiscoveryTimers() {
 
     if (
@@ -714,6 +739,68 @@ export function handleConnectionEvent(
             break;
 
 
+        case "PHONE_NOTIFICATIONS_SNAPSHOT": {
+            const incoming = Array.isArray(event.notifications)
+                ? event.notifications
+                : [];
+
+            state.notifications = incoming
+                .map(normalizePhoneNotification)
+                .filter(Boolean)
+                .sort((a, b) => b.postTime - a.postTime)
+                .slice(0, 200);
+
+            state.phoneActionStatus = null;
+            window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            break;
+        }
+
+
+        case "PHONE_NOTIFICATION_POSTED": {
+            const notification = normalizePhoneNotification(event);
+            if (!notification) {
+                break;
+            }
+
+            state.notifications = [
+                notification,
+                ...state.notifications.filter(
+                    item => item.key !== notification.key
+                )
+            ]
+                .sort((a, b) => b.postTime - a.postTime)
+                .slice(0, 200);
+
+            window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            break;
+        }
+
+
+        case "PHONE_NOTIFICATION_REMOVED": {
+            const notificationKey = safeString(event.key);
+            state.notifications = state.notifications.filter(
+                item => item.key !== notificationKey
+            );
+
+            window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            break;
+        }
+
+
+        case "PHONE_ACTION_RESULT":
+            state.phoneActionStatus = {
+                action: safeString(event.action),
+                notificationKey: safeString(event.notificationKey),
+                success: Boolean(event.success),
+                message: event.success
+                    ? "Phone action completed."
+                    : "The phone could not complete that action."
+            };
+
+            window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            break;
+
+
         // ====================================================
         // REQUEST ACCEPTED
         // ====================================================
@@ -1069,6 +1156,10 @@ function resetConnectionState() {
 
     state.activeRequestId =
         null;
+
+    state.notifications = [];
+    state.phoneActionStatus = null;
+    window.dispatchEvent(new Event("phonecast-notifications-updated"));
 
     stopVideoState(
         false
