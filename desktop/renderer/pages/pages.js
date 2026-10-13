@@ -2264,12 +2264,6 @@ export function showCastingPage() {
                         aria-hidden="true"
                     ></canvas>
 
-                    <span
-                        id="phoneCastClickIndicator"
-                        class="phonecast-click-indicator hidden"
-                        aria-hidden="true"
-                    ></span>
-
 
                     <div
                         id="phoneCastViewerEmpty"
@@ -2294,6 +2288,38 @@ export function showCastingPage() {
                 </section>
 
                 <aside class="viewer-info">
+
+                    <div class="info-card input-mode-card">
+
+                        <label>INPUT MODE</label>
+
+                        <div
+                            class="casting-actions input-mode-actions"
+                            role="group"
+                            aria-label="Remote input mode"
+                        >
+
+                            <button
+                                type="button"
+                                id="touchModeButton"
+                                aria-pressed="true"
+                                title="Use touchpad gestures to swipe the phone screen"
+                            >
+                                TOUCH
+                            </button>
+
+                            <button
+                                type="button"
+                                id="pointerModeButton"
+                                aria-pressed="false"
+                                title="Use a visible pointer for precise clicking"
+                            >
+                                POINTER
+                            </button>
+
+                        </div>
+
+                    </div>
 
                     <div class="info-card">
 
@@ -2440,7 +2466,18 @@ function setupRemoteInput() {
         return;
     }
 
+    const touchModeButton =
+        document.getElementById("touchModeButton");
+
+    const pointerModeButton =
+        document.getElementById("pointerModeButton");
+
+    const viewer =
+        canvas.closest(".viewer-shell");
+
+    let inputMode = "touch";
     let pointerActive = false;
+    let activePointerId = null;
     let lastPointerPoint = null;
     let lastPointerSentAt = 0;
 
@@ -2462,10 +2499,9 @@ function setupRemoteInput() {
             return null;
         }
 
-        const viewer =
-            canvas.closest(".viewer-shell");
         const isLandscapeFit =
             viewer?.classList.contains("landscape-fit");
+
         const scale = isLandscapeFit
             ? Math.max(
                 rect.width / sourceWidth,
@@ -2475,6 +2511,7 @@ function setupRemoteInput() {
                 rect.width / sourceWidth,
                 rect.height / sourceHeight
             );
+
         const renderedWidth =
             sourceWidth * scale;
         const renderedHeight =
@@ -2509,34 +2546,130 @@ function setupRemoteInput() {
             x: Math.round(Math.max(
                 0,
                 Math.min(
-                    sourceWidth,
+                    sourceWidth - 1,
                     sourceX
                 )
             )),
             y: Math.round(Math.max(
                 0,
                 Math.min(
-                    sourceHeight,
+                    sourceHeight - 1,
                     sourceY
                 )
             ))
         };
     };
 
-    canvas.addEventListener("pointerdown", event => {
-        if (event.button !== 0) {
+    const setInputMode = mode => {
+        inputMode =
+            mode === "pointer"
+                ? "pointer"
+                : "touch";
+
+        if (touchModeButton) {
+            touchModeButton.setAttribute(
+                "aria-pressed",
+                String(inputMode === "touch")
+            );
+        }
+
+        if (pointerModeButton) {
+            pointerModeButton.setAttribute(
+                "aria-pressed",
+                String(inputMode === "pointer")
+            );
+        }
+
+        /*
+         * Touch mode hides the desktop cursor while it is over the
+         * viewer. Pointer mode keeps the normal OS cursor visible.
+         * No synthetic red-dot overlay is drawn on top of the stream.
+         */
+        canvas.style.cursor =
+            inputMode === "touch"
+                ? "none"
+                : "default";
+
+        if (viewer) {
+            viewer.dataset.inputMode = inputMode;
+        }
+    };
+
+    const cancelActiveGesture = () => {
+        if (!pointerActive) {
             return;
         }
+
+        const last =
+            lastPointerPoint || {
+                x: 0,
+                y: 0
+            };
+
+        sendRemoteInput({
+            type: "INPUT_TOUCH",
+            action: "cancel",
+            pointerId: activePointerId ?? 0,
+            x: last.x,
+            y: last.y,
+            timestamp: Date.now()
+        });
+
+        try {
+            if (activePointerId !== null) {
+                canvas.releasePointerCapture?.(
+                    activePointerId
+                );
+            }
+        } catch (_) {
+            // Pointer capture may already have been released.
+        }
+
+        pointerActive = false;
+        activePointerId = null;
+        lastPointerPoint = null;
+    };
+
+    touchModeButton?.addEventListener(
+        "click",
+        () => setInputMode("touch")
+    );
+
+    pointerModeButton?.addEventListener(
+        "click",
+        () => setInputMode("pointer")
+    );
+
+    setInputMode("touch");
+
+    /*
+     * Pointer down/up represent an actual tap. Keeping the gesture
+     * lifecycle intact lets Android receive a real DOWN -> MOVE -> UP
+     * sequence rather than a mouse cursor drawn into the video.
+     */
+    canvas.addEventListener("pointerdown", event => {
+        if (event.button !== 0 || pointerActive) {
+            return;
+        }
+
         const point = getScreenPoint(event);
         if (!point) {
             return;
         }
 
         pointerActive = true;
+        activePointerId = event.pointerId;
         lastPointerPoint = point;
         lastPointerSentAt = performance.now();
-        canvas.setPointerCapture?.(event.pointerId);
+
+        try {
+            canvas.setPointerCapture?.(event.pointerId);
+        } catch (_) {
+            // Continue with normal events if capture is unavailable.
+        }
+
         canvas.focus();
+
         sendRemoteInput({
             type: "INPUT_TOUCH",
             action: "down",
@@ -2545,12 +2678,18 @@ function setupRemoteInput() {
             y: point.y,
             timestamp: Date.now()
         });
-        showClickIndicator(event);
+
         event.preventDefault();
     });
 
     canvas.addEventListener("pointermove", event => {
-        if (!pointerActive) {
+        if (
+            !pointerActive ||
+            (
+                activePointerId !== null &&
+                event.pointerId !== activePointerId
+            )
+        ) {
             return;
         }
 
@@ -2567,12 +2706,16 @@ function setupRemoteInput() {
                 point.y - lastPointerPoint.y
             ) >= 1;
 
-        if (!moved || now - lastPointerSentAt < 8) {
+        if (
+            !moved ||
+            now - lastPointerSentAt < 8
+        ) {
             return;
         }
 
         lastPointerPoint = point;
         lastPointerSentAt = now;
+
         sendRemoteInput({
             type: "INPUT_TOUCH",
             action: "move",
@@ -2581,78 +2724,172 @@ function setupRemoteInput() {
             y: point.y,
             timestamp: Date.now()
         });
-        showClickIndicator(event);
+
         event.preventDefault();
     });
 
     canvas.addEventListener("pointerup", event => {
-        if (!pointerActive || event.button !== 0) {
-            return;
-        }
-        const end =
-            getScreenPoint(event) ||
-            lastPointerPoint;
-        if (!end) {
-            pointerActive = false;
-            lastPointerPoint = null;
+        if (
+            !pointerActive ||
+            event.button !== 0 ||
+            (
+                activePointerId !== null &&
+                event.pointerId !== activePointerId
+            )
+        ) {
             return;
         }
 
+        const end =
+            getScreenPoint(event) ||
+            lastPointerPoint;
+
+        if (end) {
+            sendRemoteInput({
+                type: "INPUT_TOUCH",
+                action: "up",
+                pointerId: event.pointerId || 0,
+                x: end.x,
+                y: end.y,
+                timestamp: Date.now()
+            });
+        }
+
         pointerActive = false;
+        activePointerId = null;
         lastPointerPoint = null;
-        sendRemoteInput({
-            type: "INPUT_TOUCH",
-            action: "up",
-            pointerId: event.pointerId || 0,
-            x: end.x,
-            y: end.y,
-            timestamp: Date.now()
-        });
-        canvas.releasePointerCapture?.(event.pointerId);
+
+        try {
+            canvas.releasePointerCapture?.(event.pointerId);
+        } catch (_) {
+            // The browser may already have released pointer capture.
+        }
+
         event.preventDefault();
     });
 
     canvas.addEventListener("pointercancel", event => {
-        if (!pointerActive) {
+        if (
+            !pointerActive ||
+            (
+                activePointerId !== null &&
+                event.pointerId !== activePointerId
+            )
+        ) {
             return;
         }
 
-        pointerActive = false;
-        lastPointerPoint = null;
-        sendRemoteInput({
-            type: "INPUT_TOUCH",
-            action: "cancel",
-            pointerId: event.pointerId || 0,
-            timestamp: Date.now()
-        });
+        cancelActiveGesture();
     });
 
+    /*
+     * Touch Mode interprets two-finger touchpad scroll events as
+     * phone swipes on either axis. Pointer Mode retains conventional
+     * vertical scrolling while still allowing taps and drags.
+     *
+     * Note: standard Electron DOM events do not expose raw one-finger
+     * Windows Precision Touchpad contacts. Native Windows integration
+     * may be needed later if we want to use an unpressed one-finger
+     * trackpad movement as a direct phone-touch gesture.
+     */
     canvas.addEventListener("wheel", event => {
         const point = getScreenPoint(event);
-        if (!point || !event.deltaY) {
+
+        if (!point) {
             return;
+        }
+
+        const rawX =
+            Number(event.deltaX) || 0;
+        const rawY =
+            Number(event.deltaY) || 0;
+
+        const useHorizontal =
+            inputMode === "touch" &&
+            Math.abs(rawX) > Math.abs(rawY);
+
+        const rawDelta =
+            useHorizontal
+                ? rawX
+                : rawY;
+
+        if (!rawDelta) {
+            return;
+        }
+
+        let delta = rawDelta;
+
+        if (event.deltaMode === 1) {
+            delta *= 16;
+        } else if (event.deltaMode === 2) {
+            delta *= useHorizontal
+                ? canvas.clientWidth
+                : canvas.clientHeight;
         }
 
         const distance =
             Math.max(
-                80,
+                100,
                 Math.min(
-                    900,
-                    Math.abs(event.deltaY) * 2.5
+                    700,
+                    Math.abs(delta) * 2.5
                 )
             );
 
+        /*
+         * A downward/rightward touchpad scroll is translated into
+         * an upward/leftward finger swipe, matching typical content
+         * scrolling behaviour.
+         */
         const direction =
-            event.deltaY > 0
+            delta > 0
                 ? -1
                 : 1;
 
+        const startX =
+            useHorizontal
+                ? point.x - (direction * distance * 0.5)
+                : point.x;
+
+        const endX =
+            useHorizontal
+                ? point.x + (direction * distance * 0.5)
+                : point.x;
+
+        const startY =
+            useHorizontal
+                ? point.y
+                : point.y - (direction * distance * 0.5);
+
+        const endY =
+            useHorizontal
+                ? point.y
+                : point.y + (direction * distance * 0.5);
+
+        const clampX = value =>
+            Math.round(Math.max(
+                0,
+                Math.min(
+                    (state.video.width || canvas.width) - 1,
+                    value
+                )
+            ));
+
+        const clampY = value =>
+            Math.round(Math.max(
+                0,
+                Math.min(
+                    (state.video.height || canvas.height) - 1,
+                    value
+                )
+            ));
+
         sendRemoteInput({
             type: "INPUT_SCROLL",
-            startX: point.x,
-            startY: point.y - (direction * distance * 0.5),
-            endX: point.x,
-            endY: point.y + (direction * distance * 0.5),
+            startX: clampX(startX),
+            startY: clampY(startY),
+            endX: clampX(endX),
+            endY: clampY(endY),
             durationMs: 220
         });
 
@@ -2667,7 +2904,12 @@ function setupRemoteInput() {
 
     canvas.addEventListener("keydown", event => {
         const key = event.key;
-        if (key.length === 1 && !event.ctrlKey && !event.metaKey) {
+
+        if (
+            key.length === 1 &&
+            !event.ctrlKey &&
+            !event.metaKey
+        ) {
             sendRemoteInput({
                 type: "INPUT_TEXT",
                 text: key
@@ -2679,6 +2921,7 @@ function setupRemoteInput() {
                 Escape: "BACK",
                 Home: "HOME"
             };
+
             if (keyMap[key]) {
                 sendRemoteInput({
                     type: "INPUT_KEY",
@@ -2686,11 +2929,24 @@ function setupRemoteInput() {
                 });
             }
         }
+
         event.preventDefault();
     });
 
     canvas.tabIndex = 0;
-    canvas.addEventListener("click", () => canvas.focus());
+    canvas.addEventListener(
+        "click",
+        () => canvas.focus()
+    );
+
+    /*
+     * Release remote touch state on page teardown/navigation.
+     */
+    window.addEventListener(
+        "beforeunload",
+        cancelActiveGesture,
+        { once: true }
+    );
 }
 
 
@@ -2894,30 +3150,6 @@ function resizeAnnotationCanvas() {
         };
         image.src = previous;
     }
-}
-
-
-function showClickIndicator(event) {
-
-    const indicator =
-        document.getElementById(
-            "phoneCastClickIndicator"
-        );
-
-    if (!indicator) {
-        return;
-    }
-
-    const rect =
-        event.currentTarget.getBoundingClientRect();
-    indicator.style.left =
-        `${event.clientX - rect.left}px`;
-    indicator.style.top =
-        `${event.clientY - rect.top}px`;
-    indicator.classList.remove("hidden");
-    indicator.classList.remove("pulse");
-    void indicator.offsetWidth;
-    indicator.classList.add("pulse");
 }
 
 
