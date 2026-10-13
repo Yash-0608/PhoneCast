@@ -53,6 +53,15 @@ fun WelcomeScreen(
             )
     ) {
 
+        Image(
+            painter = painterResource(id = R.drawable.phonecast_warm_mountains),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.22f),
+            contentScale = ContentScale.Crop
+        )
+
         /*
          * -----------------------------------------------------
          * BACKGROUND GLOW
