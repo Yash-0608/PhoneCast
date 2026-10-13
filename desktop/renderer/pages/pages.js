@@ -2264,11 +2264,7 @@ export function showCastingPage() {
                         aria-hidden="true"
                     ></canvas>
 
-                    <span
-                        id="phoneCastRemoteCursor"
-                        class="phonecast-remote-cursor hidden"
-                        aria-hidden="true"
-                    ></span>
+
 
 
                     <div
@@ -2526,11 +2522,8 @@ function setupRemoteInput() {
     const canvas =
         document.getElementById("phoneCastVideoCanvas");
 
-    const cursor =
-        document.getElementById("phoneCastRemoteCursor");
-
-    if (!canvas || !cursor) {
-        console.error("[PhoneCast Input] Viewer canvas or remote cursor is missing.");
+    if (!canvas) {
+        console.error("[PhoneCast Input] Viewer canvas is missing.");
         return;
     }
 
@@ -2621,28 +2614,6 @@ function setupRemoteInput() {
         };
     };
 
-    const hideRemoteCursor = () => {
-        cursor.classList.add("hidden");
-    };
-
-    /*
-     * The cursor is drawn by the desktop over the live viewer. It is
-     * deliberately NOT sent to Android as a continuous touch: Android
-     * touchscreens have taps and gestures, not a universal hover cursor.
-     */
-    const updateRemoteCursor = (event, point) => {
-        if (!point || !viewer) {
-            hideRemoteCursor();
-            return;
-        }
-
-        const viewerRect = viewer.getBoundingClientRect();
-        cursor.style.left = `${event.clientX - viewerRect.left}px`;
-        cursor.style.top = `${event.clientY - viewerRect.top}px`;
-        cursor.classList.remove("hidden");
-        cursor.classList.toggle("pointer-mode", inputMode === "pointer");
-    };
-
     const setInputMode = mode => {
         inputMode = mode === "pointer" ? "pointer" : "touch";
 
@@ -2660,13 +2631,11 @@ function setupRemoteInput() {
             viewer.dataset.inputMode = inputMode;
         }
 
-        cursor.classList.toggle("pointer-mode", inputMode === "pointer");
-
         /*
-         * The remote cursor overlay replaces the native cursor only while
-         * the pointer is over the actual phone image.
+         * Keep the real Windows pointer visible over the phone viewer. The
+         * old Touch Mode hid it, which left the user with no navigation cursor.
          */
-        canvas.style.cursor = "none";
+        canvas.style.cursor = "default";
     };
 
     const resetLocalPointer = () => {
@@ -2696,7 +2665,6 @@ function setupRemoteInput() {
      */
     canvas.addEventListener("pointermove", event => {
         const point = getScreenPoint(event);
-        updateRemoteCursor(event, point);
 
         if (
             !pointerActive ||
@@ -2715,16 +2683,11 @@ function setupRemoteInput() {
         event.preventDefault();
     });
 
-    canvas.addEventListener("pointerenter", event => {
-        const point = getScreenPoint(event);
-        updateRemoteCursor(event, point);
-        canvas.style.cursor = "none";
+    canvas.addEventListener("pointerenter", () => {
+        canvas.style.cursor = "default";
     });
 
     canvas.addEventListener("pointerleave", () => {
-        if (!pointerActive) {
-            hideRemoteCursor();
-        }
         canvas.style.cursor = "default";
     });
 
@@ -2760,7 +2723,6 @@ function setupRemoteInput() {
         }
 
         canvas.focus();
-        updateRemoteCursor(event, point);
         event.preventDefault();
     });
 
