@@ -21,6 +21,12 @@ export const state = {
     notifications:
         [],
 
+    contacts:
+        [],
+
+    recentCalls:
+        [],
+
     phoneActionStatus:
         null,
 
