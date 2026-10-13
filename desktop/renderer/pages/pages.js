@@ -2152,6 +2152,12 @@ function phonecastGlyph(name, size = 18) {
         home: "<path d='m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1Z'/>",
         recents: "<rect x='4' y='4' width='16' height='16' rx='3'/>",
         shield: "<path d='M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z'/><path d='m9 12 2 2 4-4'/>",
+        battery: "<rect x='2' y='7' width='18' height='10' rx='2'/><path d='M22 10v4M6 10h7'/>",
+        sun: "<circle cx='12' cy='12' r='4'/><path d='M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41'/>",
+        location: "<path d='M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z'/><circle cx='12' cy='10' r='2.5'/>",
+        apps: "<rect x='3' y='3' width='7' height='7' rx='1.5'/><rect x='14' y='3' width='7' height='7' rx='1.5'/><rect x='3' y='14' width='7' height='7' rx='1.5'/><rect x='14' y='14' width='7' height='7' rx='1.5'/>",
+        volume: "<path d='M4 10v4h4l5 4V6l-5 4H4Z'/><path d='M16 9a5 5 0 0 1 0 6M18.5 6.5a9 9 0 0 1 0 11'/>",
+        lock: "<rect x='4' y='10' width='16' height='12' rx='2'/><path d='M8 10V7a4 4 0 0 1 8 0v3M12 14v4'/>",
         arrow: "<path d='m9 18 6-6-6-6'/>"
     };
     return "<svg class='phonecast-glyph' width='" + size + "' height='" + size +
@@ -2161,18 +2167,18 @@ function phonecastGlyph(name, size = 18) {
 }
 
 const PHONECAST_SETTINGS_ITEMS = [
-    { icon: "⌁", title: "Network & internet", detail: "Wi-Fi, mobile network, hotspot", action: "OPEN_SETTINGS_NETWORK" },
-    { icon: "▣", title: "Connected devices", detail: "Bluetooth, pairing and USB", action: "OPEN_SETTINGS_CONNECTED_DEVICES" },
-    { icon: "▦", title: "Apps", detail: "Installed apps and permissions", action: "OPEN_SETTINGS_APPS" },
-    { icon: "♧", title: "Notifications", detail: "Notification access and alerts", action: "OPEN_NOTIFICATION_ACCESS_SETTINGS" },
-    { icon: "▤", title: "Battery", detail: "Battery use and power settings", action: "OPEN_SETTINGS_BATTERY" },
-    { icon: "☼", title: "Display", detail: "Brightness, refresh rate and theme", action: "OPEN_SETTINGS_DISPLAY" },
-    { icon: "◖", title: "Sound & vibration", detail: "Volume, ringtones and vibration", action: "OPEN_SETTINGS_SOUND" },
-    { icon: "◈", title: "Privacy", detail: "Permissions and privacy controls", action: "OPEN_SETTINGS_PRIVACY" },
-    { icon: "⌖", title: "Location", detail: "Location services and access", action: "OPEN_SETTINGS_LOCATION" },
-    { icon: "▣", title: "Security", detail: "Screen lock and device security", action: "OPEN_SETTINGS_SECURITY" },
-    { icon: "＋", title: "System", detail: "Language, keyboard and updates", action: "OPEN_SETTINGS_SYSTEM" },
-    { icon: "ⓘ", title: "About phone", detail: "Device model and software information", action: "OPEN_SETTINGS_ABOUT" }
+    { icon: "wifi", title: "Network & internet", detail: "Wi-Fi, mobile network, hotspot", action: "OPEN_SETTINGS_NETWORK" },
+    { icon: "screen", title: "Connected devices", detail: "Bluetooth, pairing and USB", action: "OPEN_SETTINGS_CONNECTED_DEVICES" },
+    { icon: "apps", title: "Apps", detail: "Installed apps and permissions", action: "OPEN_SETTINGS_APPS" },
+    { icon: "bell", title: "Notifications", detail: "Notification access and alerts", action: "OPEN_NOTIFICATION_ACCESS_SETTINGS" },
+    { icon: "battery", title: "Battery", detail: "Battery use and power settings", action: "OPEN_SETTINGS_BATTERY" },
+    { icon: "sun", title: "Display", detail: "Brightness, refresh rate and theme", action: "OPEN_SETTINGS_DISPLAY" },
+    { icon: "volume", title: "Sound & vibration", detail: "Volume, ringtones and vibration", action: "OPEN_SETTINGS_SOUND" },
+    { icon: "shield", title: "Privacy", detail: "Permissions and privacy controls", action: "OPEN_SETTINGS_PRIVACY" },
+    { icon: "location", title: "Location", detail: "Location services and access", action: "OPEN_SETTINGS_LOCATION" },
+    { icon: "lock", title: "Security", detail: "Screen lock and device security", action: "OPEN_SETTINGS_SECURITY" },
+    { icon: "settings", title: "System", detail: "Language, keyboard and updates", action: "OPEN_SETTINGS_SYSTEM" },
+    { icon: "phone", title: "About phone", detail: "Device model and software information", action: "OPEN_SETTINGS_ABOUT" }
 ];
 
 function renderPhonecastCallsWorkspace() {
@@ -2472,7 +2478,7 @@ function renderPhonecastSettingsWorkspace() {
     var itemsHtml = visibleItems.map(function (item) {
         return [
             "<button type='button' class='settings-category-card' data-phonecast-setting-action='" + item.action + "' data-search='" + escapeHtml((item.title + " " + item.detail).toLowerCase()) + "'>",
-            "<span class='settings-category-icon' aria-hidden='true'>" + item.icon + "</span>",
+            "<span class='settings-category-icon' aria-hidden='true'>" + phonecastGlyph(item.icon, 18) + "</span>",
             "<span class='settings-category-copy'><strong>" + escapeHtml(item.title) + "</strong><small>" + escapeHtml(item.detail) + "</small></span>",
             "<span class='settings-category-arrow' aria-hidden='true'>›</span>",
             "</button>"
