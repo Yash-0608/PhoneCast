@@ -2129,391 +2129,558 @@ export function showCastingPage() {
         return;
     }
 
+    state.currentPage = "casting";
 
-    state.currentPage =
-        "casting";
-
+    const deviceName =
+        getDeviceDisplayName(state.selectedDevice) ||
+        "Android Phone";
 
     app.innerHTML = `
 
-        <div
-            class="casting-page"
-            id="castingPage"
-        >
+        <div class="casting-page control-centre-page" id="castingPage">
 
             <header class="casting-header">
 
                 <div class="casting-brand">
-
-                    <img
-                        src="./assets/logo.png"
-                        alt="PhoneCast"
-                    >
-
+                    <img src="./assets/logo.png" alt="PhoneCast">
                     <div>
-
-                        <strong>
-                            PhoneCast
-                        </strong>
-
-                        <span>
-                            LIVE SCREEN
-                        </span>
-
+                        <strong>PhoneCast</strong>
+                        <span>PHONE CONTROL CENTRE</span>
                     </div>
-
                 </div>
-
 
                 <div class="casting-status">
-
-                    <span
-                        class="live-dot"
-                    ></span>
-
-                    <span
-                        id="phoneCastViewerStatus"
-                    >
-                        Preparing phone screen...
-                    </span>
-
+                    <span class="live-dot"></span>
+                    <span id="phoneCastViewerStatus">Connecting to phone...</span>
                 </div>
 
-
                 <div class="casting-actions">
-
-                    <button
-                        type="button"
-                        id="fullscreenButton"
-                    >
-                        FULLSCREEN
-                    </button>
-
-                    <button
-                        type="button"
-                        id="presentationButton"
-                    >
-                        PRESENTATION
-                    </button>
-
-                    <button
-                        type="button"
-                        id="annotationButton"
-                    >
-                        ANNOTATE
-                    </button>
-
-                    <button
-                        type="button"
-                        id="clearAnnotationButton"
-                        class="hidden"
-                    >
-                        CLEAR
-                    </button>
-
-                    <button
-                        type="button"
-                        id="landscapeFitButton"
-                        aria-pressed="false"
-                    >
-                        LANDSCAPE FIT
-                    </button>
-
-
-                    <button
-                        type="button"
-                        id="disconnectButton"
-                        class="danger"
-                    >
-                        DISCONNECT
-                    </button>
-
+                    <button type="button" id="fullscreenButton">FULLSCREEN</button>
+                    <button type="button" id="presentationButton">PRESENTATION</button>
+                    <button type="button" id="annotationButton">ANNOTATE</button>
+                    <button type="button" id="clearAnnotationButton" class="hidden">CLEAR</button>
+                    <button type="button" id="landscapeFitButton" aria-pressed="false">LANDSCAPE FIT</button>
+                    <button type="button" id="disconnectButton" class="danger">DISCONNECT</button>
                 </div>
 
             </header>
 
+            <main class="casting-main control-centre-main">
 
-            <main class="casting-main">
+                <section class="viewer-column" aria-label="Live phone screen">
 
-                <section class="viewer-shell">
-
-                    <div
-                        id="phoneCastViewerLoading"
-                        class="viewer-loading"
-                    >
-
-                        <div class="spinner"></div>
-
-                        <strong>
-                            Preparing phone screen
-                        </strong>
-
-                        <span>
-                            Waiting for H.264 video...
-                        </span>
-
+                    <div class="viewer-device-header">
+                        <div class="viewer-device-identity">
+                            <span class="eyebrow">LIVE PHONE</span>
+                            <strong title="${escapeHtml(deviceName)}">${escapeHtml(deviceName)}</strong>
+                        </div>
+                        <span class="viewer-live-badge"><span></span> LIVE</span>
                     </div>
 
+                    <section class="viewer-shell">
 
-                    <canvas
-                        id="phoneCastVideoCanvas"
-                    ></canvas>
+                        <div id="phoneCastViewerLoading" class="viewer-loading">
+                            <div class="spinner"></div>
+                            <strong>Preparing phone screen</strong>
+                            <span>Waiting for H.264 video...</span>
+                        </div>
 
-                    <canvas
-                        id="phoneCastAnnotationCanvas"
-                        aria-hidden="true"
-                    ></canvas>
+                        <canvas id="phoneCastVideoCanvas"></canvas>
 
+                        <canvas id="phoneCastAnnotationCanvas" aria-hidden="true"></canvas>
 
+                        <div id="phoneCastViewerEmpty" class="viewer-empty">
+                            <img src="./assets/logo.png" alt="">
+                            <strong>Phone screen unavailable</strong>
+                            <span>Waiting for the video stream.</span>
+                        </div>
 
+                    </section>
 
-                    <div
-                        id="phoneCastViewerEmpty"
-                        class="viewer-empty"
-                    >
+                    <div class="phone-navigation-bar" aria-label="Android navigation">
+                        <button type="button" id="phoneBackButton" title="Android Back">
+                            <span aria-hidden="true">‹</span>
+                            <small>BACK</small>
+                        </button>
+                        <button type="button" id="phoneHomeButton" title="Android Home">
+                            <span class="nav-home-glyph" aria-hidden="true"></span>
+                            <small>HOME</small>
+                        </button>
+                        <button type="button" id="phoneRecentsButton" title="Android Recent apps">
+                            <span class="nav-recents-glyph" aria-hidden="true"></span>
+                            <small>RECENTS</small>
+                        </button>
+                    </div>
 
-                        <img
-                                src="./assets/logo.png"
-                            alt=""
-                        >
-
-                        <strong>
-                            Phone screen unavailable
-                        </strong>
-
-                        <span>
-                            Waiting for the video stream.
-                        </span>
-
+                    <div class="viewer-stream-summary">
+                        <span id="phoneCastResolution">Resolution pending</span>
+                        <span class="stream-separator"></span>
+                        <span id="phoneCastFps">${Number(state.video?.fps) || 60} FPS</span>
+                        <span class="stream-separator"></span>
+                        <span id="phoneCastCodec">${escapeHtml(state.video?.codec || "H.264")}</span>
                     </div>
 
                 </section>
 
-                <aside class="viewer-info">
+                <section class="workspace-shell" aria-label="PhoneCast workspaces">
 
-                    <div class="info-card input-mode-card">
+                    <nav class="workspace-tab-nav" role="tablist" aria-label="Phone tools">
 
-                        <label>INPUT MODE</label>
+                        <button type="button" class="workspace-tab active" id="workspaceTabScreen"
+                            role="tab" aria-selected="true" aria-controls="workspacePanelScreen"
+                            data-workspace-tab="screen">
+                            <span aria-hidden="true">▣</span><span>Screen</span>
+                        </button>
 
-                        <div
-                            class="casting-actions input-mode-actions"
-                            role="group"
-                            aria-label="Remote input mode"
-                        >
+                        <button type="button" class="workspace-tab" id="workspaceTabCalls"
+                            role="tab" aria-selected="false" aria-controls="workspacePanelCalls"
+                            data-workspace-tab="calls">
+                            <span aria-hidden="true">☎</span><span>Calls</span>
+                        </button>
 
-                            <button
-                                type="button"
-                                id="touchModeButton"
-                                aria-pressed="true"
-                                title="Use touchpad gestures to swipe the phone screen"
-                            >
-                                TOUCH
-                            </button>
+                        <button type="button" class="workspace-tab" id="workspaceTabMessages"
+                            role="tab" aria-selected="false" aria-controls="workspacePanelMessages"
+                            data-workspace-tab="messages">
+                            <span aria-hidden="true">▤</span><span>Messages</span>
+                        </button>
 
-                            <button
-                                type="button"
-                                id="pointerModeButton"
-                                aria-pressed="false"
-                                title="Use a visible pointer for precise clicking"
-                            >
-                                POINTER
-                            </button>
+                        <button type="button" class="workspace-tab" id="workspaceTabPhoney"
+                            role="tab" aria-selected="false" aria-controls="workspacePanelPhoney"
+                            data-workspace-tab="phoney">
+                            <span aria-hidden="true">✧</span><span>Phoney</span>
+                        </button>
 
-                        </div>
+                        <button type="button" class="workspace-tab" id="workspaceTabSettings"
+                            role="tab" aria-selected="false" aria-controls="workspacePanelSettings"
+                            data-workspace-tab="settings">
+                            <span aria-hidden="true">⚙</span><span>Settings</span>
+                        </button>
+
+                    </nav>
+
+                    <div class="workspace-content">
+
+                        <section class="workspace-panel" id="workspacePanelScreen"
+                            role="tabpanel" aria-labelledby="workspaceTabScreen"
+                            data-workspace-panel="screen">
+
+                            <div class="workspace-heading">
+                                <div>
+                                    <span class="eyebrow">CONNECTED DEVICE</span>
+                                    <h1>Phone control</h1>
+                                    <p>Your live phone screen stays here while you switch workspaces.</p>
+                                </div>
+                                <span class="connection-state-pill"><span></span> Connected</span>
+                            </div>
+
+                            <div class="workspace-stat-grid">
+                                <article class="workspace-stat-card">
+                                    <span class="stat-icon">▣</span>
+                                    <span class="eyebrow">DEVICE</span>
+                                    <strong title="${escapeHtml(deviceName)}">${escapeHtml(deviceName)}</strong>
+                                    <small>Authorized session</small>
+                                </article>
+                                <article class="workspace-stat-card">
+                                    <span class="stat-icon">↗</span>
+                                    <span class="eyebrow">STREAM</span>
+                                    <strong id="workspaceStreamStatus">H.264</strong>
+                                    <small>Live phone display</small>
+                                </article>
+                                <article class="workspace-stat-card">
+                                    <span class="stat-icon">⌁</span>
+                                    <span class="eyebrow">INPUT</span>
+                                    <strong id="workspaceInputModeStatus">Touch mode</strong>
+                                    <small>Touchpad and pointer</small>
+                                </article>
+                            </div>
+
+                            <section class="workspace-card">
+                                <div class="workspace-card-heading">
+                                    <div>
+                                        <h2>Interaction mode</h2>
+                                        <p>Choose how laptop input should control your phone.</p>
+                                    </div>
+                                </div>
+                                <div class="interaction-mode-grid">
+                                    <button type="button" id="touchModeButton" class="interaction-mode-option selected"
+                                        aria-pressed="true">
+                                        <span class="mode-icon" aria-hidden="true">⌁</span>
+                                        <span><strong>Touch mode</strong><small>Use touchpad gestures to swipe and scroll.</small></span>
+                                        <span class="mode-radio" aria-hidden="true"></span>
+                                    </button>
+                                    <button type="button" id="pointerModeButton" class="interaction-mode-option"
+                                        aria-pressed="false">
+                                        <span class="mode-icon" aria-hidden="true">↖</span>
+                                        <span><strong>Pointer mode</strong><small>Use precise taps and click-drag interaction.</small></span>
+                                        <span class="mode-radio" aria-hidden="true"></span>
+                                    </button>
+                                </div>
+                            </section>
+
+                            <section class="workspace-card">
+                                <div class="workspace-card-heading">
+                                    <div>
+                                        <h2>Quick navigation</h2>
+                                        <p>Android Back, Home and Recents are always available below the live screen.</p>
+                                    </div>
+                                </div>
+                                <div class="quick-nav-explainer">
+                                    <span class="quick-nav-icon" aria-hidden="true">⌘</span>
+                                    <div>
+                                        <strong>Gesture navigation</strong>
+                                        <p>Use a two-finger touchpad swipe over the phone preview. Swipe up near the bottom edge to open Recents.</p>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <div class="workspace-note">
+                                <span class="note-dot"></span>
+                                <span>The mirrored phone remains active when you switch tabs.</span>
+                            </div>
+
+                        </section>
+
+                        <section class="workspace-panel hidden" id="workspacePanelCalls"
+                            role="tabpanel" aria-labelledby="workspaceTabCalls"
+                            data-workspace-panel="calls" hidden>
+
+                            <div class="workspace-heading">
+                                <div>
+                                    <span class="eyebrow">PHONE</span>
+                                    <h1>Calling</h1>
+                                    <p>Dial numbers, review recent calls and find saved contacts.</p>
+                                </div>
+                                <span class="feature-status-pill">CALLS</span>
+                            </div>
+
+                            <div class="subtab-nav" role="tablist" aria-label="Calls sections">
+                                <button type="button" class="subtab-button active" data-call-view="dialpad"
+                                    aria-selected="true">Dial pad</button>
+                                <button type="button" class="subtab-button" data-call-view="recent"
+                                    aria-selected="false">Recent calls</button>
+                                <button type="button" class="subtab-button" data-call-view="contacts"
+                                    aria-selected="false">Contacts</button>
+                            </div>
+
+                            <div class="call-view-panel" data-call-panel="dialpad">
+                                <div class="dialer-card">
+                                    <label for="callNumberInput">PHONE NUMBER</label>
+                                    <div class="dialer-number-row">
+                                        <input id="callNumberInput" type="tel" inputmode="tel"
+                                            autocomplete="off" placeholder="Enter a phone number"
+                                            aria-label="Phone number">
+                                        <button type="button" id="clearCallNumber" class="icon-button"
+                                            title="Clear number" aria-label="Clear number">×</button>
+                                    </div>
+                                    <div class="dialpad-grid" aria-label="Dial pad">
+                                        <button type="button" data-dial-digit="1">1<small>&nbsp;</small></button>
+                                        <button type="button" data-dial-digit="2">2<small>ABC</small></button>
+                                        <button type="button" data-dial-digit="3">3<small>DEF</small></button>
+                                        <button type="button" data-dial-digit="4">4<small>GHI</small></button>
+                                        <button type="button" data-dial-digit="5">5<small>JKL</small></button>
+                                        <button type="button" data-dial-digit="6">6<small>MNO</small></button>
+                                        <button type="button" data-dial-digit="7">7<small>PQRS</small></button>
+                                        <button type="button" data-dial-digit="8">8<small>TUV</small></button>
+                                        <button type="button" data-dial-digit="9">9<small>WXYZ</small></button>
+                                        <button type="button" data-dial-digit="*">*</button>
+                                        <button type="button" data-dial-digit="0">0<small>+</small></button>
+                                        <button type="button" data-dial-digit="#">#</button>
+                                    </div>
+                                    <button type="button" id="openPhoneDialerButton" class="primary-workspace-button" disabled>
+                                        <span aria-hidden="true">☎</span> Open phone dialer
+                                    </button>
+                                    <p class="integration-hint">The dial pad UI is ready. Phone dialer integration will be enabled after the Android command and call-permission flow is added.</p>
+                                </div>
+                            </div>
+
+                            <div class="call-view-panel hidden" data-call-panel="recent" hidden>
+                                <div class="workspace-empty-state">
+                                    <span class="empty-state-icon" aria-hidden="true">◷</span>
+                                    <h2>Recent calls</h2>
+                                    <p>Call history will appear here once the Android call-log integration and its permission flow are implemented.</p>
+                                </div>
+                            </div>
+
+                            <div class="call-view-panel hidden" data-call-panel="contacts" hidden>
+                                <div class="workspace-empty-state">
+                                    <span class="empty-state-icon" aria-hidden="true">♙</span>
+                                    <h2>Phone contacts</h2>
+                                    <p>Saved phone numbers will appear here after the contact provider and permission flow are connected.</p>
+                                </div>
+                            </div>
+
+                        </section>
+
+                        <section class="workspace-panel hidden" id="workspacePanelMessages"
+                            role="tabpanel" aria-labelledby="workspaceTabMessages"
+                            data-workspace-panel="messages" hidden>
+
+                            <div class="workspace-heading">
+                                <div>
+                                    <span class="eyebrow">INBOX</span>
+                                    <h1>Messages</h1>
+                                    <p>One place for SMS and supported app notification replies.</p>
+                                </div>
+                                <span class="feature-status-pill">MESSAGES</span>
+                            </div>
+
+                            <div class="message-search-row">
+                                <span aria-hidden="true">⌕</span>
+                                <input type="search" id="messageSearchInput"
+                                    placeholder="Search messages..." aria-label="Search messages" disabled>
+                            </div>
+
+                            <div class="message-filter-row" role="group" aria-label="Message filters">
+                                <button type="button" class="message-filter active" disabled>All</button>
+                                <button type="button" class="message-filter" disabled>SMS</button>
+                                <button type="button" class="message-filter" disabled>WhatsApp</button>
+                                <button type="button" class="message-filter" disabled>Instagram</button>
+                                <button type="button" class="message-filter" disabled>Other</button>
+                            </div>
+
+                            <div class="workspace-empty-state spacious">
+                                <span class="empty-state-icon" aria-hidden="true">▤</span>
+                                <h2>Connect your phone inbox</h2>
+                                <p>The current Android code does not yet include a notification listener. We'll add the explicit notification-access flow and supported quick-reply actions before showing real conversations here.</p>
+                            </div>
+
+                        </section>
+
+                        <section class="workspace-panel hidden" id="workspacePanelPhoney"
+                            role="tabpanel" aria-labelledby="workspaceTabPhoney"
+                            data-workspace-panel="phoney" hidden>
+
+                            <div class="workspace-heading">
+                                <div>
+                                    <span class="eyebrow">PHONECAST AI</span>
+                                    <h1>Meet Phoney</h1>
+                                    <p>Your phone-focused AI assistant workspace.</p>
+                                </div>
+                                <span class="feature-status-pill ai">AI</span>
+                            </div>
+
+                            <div class="phoney-hero">
+                                <div class="phoney-orb" aria-hidden="true"><span>✧</span></div>
+                                <h2>Phoney is getting ready</h2>
+                                <p>We'll design its personality, permissions and actions together before connecting it to real phone operations.</p>
+                            </div>
+
+                            <div class="phoney-capability-list">
+                                <div><span>01</span><strong>Understand notifications</strong><small>Planned capability</small></div>
+                                <div><span>02</span><strong>Help with calls and messages</strong><small>Planned capability</small></div>
+                                <div><span>03</span><strong>Run approved phone actions</strong><small>Planned capability</small></div>
+                            </div>
+
+                            <div class="phoney-input-row">
+                                <input type="text" placeholder="Phoney's command box will be designed later..."
+                                    aria-label="Phoney command" disabled>
+                                <button type="button" disabled aria-label="Send to Phoney">➤</button>
+                            </div>
+
+                        </section>
+
+                        <section class="workspace-panel hidden" id="workspacePanelSettings"
+                            role="tabpanel" aria-labelledby="workspaceTabSettings"
+                            data-workspace-panel="settings" hidden>
+
+                            <div class="workspace-heading">
+                                <div>
+                                    <span class="eyebrow">DEVICE PREFERENCES</span>
+                                    <h1>Phone settings</h1>
+                                    <p>Open system settings on the connected Android phone.</p>
+                                </div>
+                                <span class="feature-status-pill">DEVICE</span>
+                            </div>
+
+                            <div class="settings-launch-card">
+                                <span class="settings-launch-icon" aria-hidden="true">⚙</span>
+                                <h2>Android Settings</h2>
+                                <p>This will open the real Settings app on your phone; it will appear in the live preview on the left.</p>
+                                <button type="button" id="openAndroidSettingsButton" class="primary-workspace-button" disabled>
+                                    Open phone settings
+                                </button>
+                                <small class="integration-hint">The button will be enabled when the authorized settings command is added to the phone-side control handler.</small>
+                            </div>
+
+                            <div class="settings-category-grid">
+                                <div class="settings-category-card"><span>⌁</span><strong>Network & internet</strong><small>Wi-Fi, mobile network</small></div>
+                                <div class="settings-category-card"><span>▣</span><strong>Connected devices</strong><small>Bluetooth and pairing</small></div>
+                                <div class="settings-category-card"><span>◉</span><strong>Display</strong><small>Brightness and display</small></div>
+                                <div class="settings-category-card"><span>♫</span><strong>Sound & vibration</strong><small>Volume and alerts</small></div>
+                                <div class="settings-category-card"><span>♙</span><strong>Privacy</strong><small>Permissions and activity</small></div>
+                                <div class="settings-category-card"><span>⊕</span><strong>System</strong><small>Language and updates</small></div>
+                            </div>
+
+                        </section>
 
                     </div>
 
-                    <div class="info-card quick-navigation-card">
-
-                        <label>NAVIGATION</label>
-
-                        <div class="remote-navigation-controls">
-
-                            <button
-                                type="button"
-                                id="phoneBackButton"
-                                title="Android Back"
-                            >BACK</button>
-
-                            <button
-                                type="button"
-                                id="phoneHomeButton"
-                                title="Android Home"
-                            >HOME</button>
-
-                            <button
-                                type="button"
-                                id="phoneRecentsButton"
-                                title="Android Recent apps"
-                            >RECENTS</button>
-
-                        </div>
-
-                        <p class="input-mode-hint">
-                            Move to the bottom of the phone screen and swipe up to open Recents.
-                        </p>
-
-                    </div>
-
-                    <div class="info-card">
-
-                        <label>
-                            DEVICE
-                        </label>
-
-                        <strong>
-                            ${escapeHtml(
-                                getDeviceDisplayName(
-                                    state.selectedDevice
-                                ) ||
-                                "Android Phone"
-                            )}
-                        </strong>
-
-                    </div>
-
-
-                    <div class="info-card">
-
-                        <label>
-                            RESOLUTION
-                        </label>
-
-                        <strong id="phoneCastResolution">
-                            Waiting...
-                        </strong>
-
-                    </div>
-
-
-                    <div class="info-card">
-
-                        <label>
-                            FRAME RATE
-                        </label>
-
-                        <strong id="phoneCastFps">
-                            ${
-                                Number(
-                                    state.video?.fps
-                                ) || 60
-                            } FPS
-                        </strong>
-
-                    </div>
-
-
-                    <div class="info-card">
-
-                        <label>
-                            CODEC
-                        </label>
-
-                        <strong id="phoneCastCodec">
-                            ${escapeHtml(
-                                state.video?.codec ||
-                                "H.264"
-                            )}
-                        </strong>
-
-                    </div>
-
-                </aside>
+                </section>
 
             </main>
 
         </div>
     `;
 
+    document.getElementById("fullscreenButton")?.addEventListener("click", toggleFullscreen);
+    document.getElementById("landscapeFitButton")?.addEventListener("click", toggleLandscapeFit);
+    document.getElementById("presentationButton")?.addEventListener("click", togglePresentationMode);
+    document.getElementById("annotationButton")?.addEventListener("click", toggleAnnotations);
+    document.getElementById("clearAnnotationButton")?.addEventListener("click", clearAnnotations);
+    document.getElementById("disconnectButton")?.addEventListener("click", handleDisconnect);
 
-    document
-        .getElementById(
-            "fullscreenButton"
-        )
-        ?.addEventListener(
-            "click",
-            toggleFullscreen
-        );
+    document.getElementById("phoneBackButton")?.addEventListener("click", () => {
+        sendRemoteInput({ type: "INPUT_KEY", key: "BACK" });
+    });
+    document.getElementById("phoneHomeButton")?.addEventListener("click", () => {
+        sendRemoteInput({ type: "INPUT_KEY", key: "HOME" });
+    });
+    document.getElementById("phoneRecentsButton")?.addEventListener("click", () => {
+        sendRemoteInput({ type: "INPUT_KEY", key: "RECENTS" });
+    });
 
-    document
-        .getElementById(
-            "landscapeFitButton"
-        )
-        ?.addEventListener(
-            "click",
-            toggleLandscapeFit
-        );
-
-    document
-        .getElementById(
-            "presentationButton"
-        )
-        ?.addEventListener(
-            "click",
-            togglePresentationMode
-        );
-
-    document
-        .getElementById(
-            "annotationButton"
-        )
-        ?.addEventListener(
-            "click",
-            toggleAnnotations
-        );
-
-    document
-        .getElementById(
-            "clearAnnotationButton"
-        )
-        ?.addEventListener(
-            "click",
-            clearAnnotations
-        );
-
-
-    document
-        .getElementById(
-            "disconnectButton"
-        )
-        ?.addEventListener(
-            "click",
-            handleDisconnect
-        );
-
-
-    document
-        .getElementById("phoneBackButton")
-        ?.addEventListener("click", () => {
-            sendRemoteInput({
-                type: "INPUT_KEY",
-                key: "BACK"
-            });
-        });
-
-    document
-        .getElementById("phoneHomeButton")
-        ?.addEventListener("click", () => {
-            sendRemoteInput({
-                type: "INPUT_KEY",
-                key: "HOME"
-            });
-        });
-
-    document
-        .getElementById("phoneRecentsButton")
-        ?.addEventListener("click", () => {
-            sendRemoteInput({
-                type: "INPUT_KEY",
-                key: "RECENTS"
-            });
-        });
-
-
+    setupWorkspaceTabs();
+    setupCallDialPad();
     initializeVideoViewerSafely();
-
     setupRemoteInput();
     setupPresenterOverlay();
+}
+
+
+function setupWorkspaceTabs() {
+
+    const buttons = Array.from(
+        document.querySelectorAll("[data-workspace-tab]")
+    );
+
+    const panels = Array.from(
+        document.querySelectorAll("[data-workspace-panel]")
+    );
+
+    if (!buttons.length || !panels.length) {
+        console.error("[PhoneCast Workspace] Missing workspace tabs or panels.");
+        return;
+    }
+
+    const activateTab = tabName => {
+
+        const validTab = buttons.some(
+            button => button.dataset.workspaceTab === tabName
+        );
+
+        if (!validTab) {
+            return;
+        }
+
+        buttons.forEach(button => {
+            const active = button.dataset.workspaceTab === tabName;
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-selected", String(active));
+            button.tabIndex = active ? 0 : -1;
+        });
+
+        panels.forEach(panel => {
+            const active = panel.dataset.workspacePanel === tabName;
+            panel.classList.toggle("hidden", !active);
+            panel.hidden = !active;
+        });
+
+        const workspaceContent = document.querySelector(".workspace-content");
+        if (workspaceContent) {
+            workspaceContent.dataset.activeWorkspace = tabName;
+            workspaceContent.scrollTop = 0;
+        }
+    };
+
+    buttons.forEach((button, index) => {
+
+        button.addEventListener("click", () => {
+            activateTab(button.dataset.workspaceTab);
+        });
+
+        button.addEventListener("keydown", event => {
+
+            let nextIndex = index;
+
+            if (event.key === "ArrowRight") {
+                nextIndex = (index + 1) % buttons.length;
+            } else if (event.key === "ArrowLeft") {
+                nextIndex = (index - 1 + buttons.length) % buttons.length;
+            } else if (event.key === "Home") {
+                nextIndex = 0;
+            } else if (event.key === "End") {
+                nextIndex = buttons.length - 1;
+            } else {
+                return;
+            }
+
+            event.preventDefault();
+            buttons[nextIndex].focus();
+            activateTab(buttons[nextIndex].dataset.workspaceTab);
+        });
+    });
+
+    document.querySelectorAll("[data-call-view]").forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            const viewName = button.dataset.callView;
+
+            document.querySelectorAll("[data-call-view]").forEach(tab => {
+                const active = tab === button;
+                tab.classList.toggle("active", active);
+                tab.setAttribute("aria-selected", String(active));
+            });
+
+            document.querySelectorAll("[data-call-panel]").forEach(panel => {
+                const active = panel.dataset.callPanel === viewName;
+                panel.classList.toggle("hidden", !active);
+                panel.hidden = !active;
+            });
+        });
+    });
+
+    activateTab("screen");
+}
+
+
+function setupCallDialPad() {
+
+    const input = document.getElementById("callNumberInput");
+    const clearButton = document.getElementById("clearCallNumber");
+
+    if (!input) {
+        return;
+    }
+
+    document.querySelectorAll("[data-dial-digit]").forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            const digit = button.dataset.dialDigit || "";
+
+            if (!digit) {
+                return;
+            }
+
+            input.value = `${input.value || ""}${digit}`;
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+        });
+    });
+
+    clearButton?.addEventListener("click", () => {
+        input.value = "";
+        input.focus();
+    });
+
+    input.addEventListener("keydown", event => {
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            document.getElementById("openPhoneDialerButton")?.focus();
+        }
+    });
 }
 
 
