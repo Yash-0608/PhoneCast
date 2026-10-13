@@ -24,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.phonecast.app.capture.ScreenCaptureService
 import com.phonecast.app.control.PhoneCastAccessibilityService
+import com.phonecast.app.notifications.PhoneCastNotificationListenerService
 import com.phonecast.app.network.ConnectionRequest
 import com.phonecast.app.network.PhoneCastDiscovery
 import com.phonecast.app.network.PhoneCastServer
@@ -39,6 +40,18 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         private const val TAG = "PhoneCastMain"
+
+        @Volatile
+        private var notificationEventTarget: MainActivity? = null
+
+        /**
+         * Forward notification events only through the authenticated
+         * PhoneCast session. The listener never opens a network connection.
+         */
+        @JvmStatic
+        fun publishNotificationEvent(event: JSONObject) {
+            notificationEventTarget?.forwardNotificationEvent(event)
+        }
 
         private const val DEFAULT_CAPTURE_WIDTH = 1080
         private const val DEFAULT_CAPTURE_HEIGHT = 2400
@@ -186,6 +199,8 @@ class MainActivity : FragmentActivity() {
     ) {
 
         super.onCreate(savedInstanceState)
+
+        notificationEventTarget = this
 
         configureSystemBars()
 
@@ -1039,6 +1054,40 @@ class MainActivity : FragmentActivity() {
         val action =
             json.optString("action").trim().uppercase()
 
+        if (action == "REPLY_NOTIFICATION") {
+            val notificationKey = json.optString("notificationKey")
+            val replyText = json.optString("text")
+            val success = PhoneCastNotificationListenerService.replyToNotification(
+                notificationKey,
+                replyText
+            )
+            sendJsonToActiveLaptop(
+                JSONObject()
+                    .put("type", "PHONE_ACTION_RESULT")
+                    .put("requestId", activeRequestId ?: "")
+                    .put("action", action)
+                    .put("notificationKey", notificationKey)
+                    .put("success", success)
+            )
+            return
+        }
+
+        if (action == "DISMISS_NOTIFICATION") {
+            val notificationKey = json.optString("notificationKey")
+            val success = PhoneCastNotificationListenerService.dismissNotification(
+                notificationKey
+            )
+            sendJsonToActiveLaptop(
+                JSONObject()
+                    .put("type", "PHONE_ACTION_RESULT")
+                    .put("requestId", activeRequestId ?: "")
+                    .put("action", action)
+                    .put("notificationKey", notificationKey)
+                    .put("success", success)
+            )
+            return
+        }
+
         val targetIntent: Intent = try {
             when (action) {
                 "OPEN_DIALER" -> {
@@ -1700,6 +1749,8 @@ class MainActivity : FragmentActivity() {
                 )
             }
         )
+
+        PhoneCastNotificationListenerService.publishCurrentSnapshot()
 
         Log.d(
             TAG,
@@ -2642,6 +2693,28 @@ class MainActivity : FragmentActivity() {
     // SEND JSON TO ACTIVE LAPTOP
     // =========================================================
 
+    private fun forwardNotificationEvent(
+        event: JSONObject
+    ) {
+        if (
+            !authenticated ||
+            activeRequestId.isNullOrBlank() ||
+            activeSocket?.isClosed != false ||
+            activeWriter == null
+        ) {
+            return
+        }
+
+        try {
+            val payload = JSONObject(event.toString())
+                .put("requestId", activeRequestId)
+
+            sendJsonToActiveLaptop(payload)
+        } catch (error: Exception) {
+            Log.e(TAG, "Unable to forward notification event to the authorized laptop.", error)
+        }
+    }
+
     private fun sendJsonToActiveLaptop(
         json: JSONObject
     ) {
@@ -2885,6 +2958,10 @@ class MainActivity : FragmentActivity() {
                 "Failed to close database.",
                 exception
             )
+        }
+
+        if (notificationEventTarget === this) {
+            notificationEventTarget = null
         }
 
         super.onDestroy()
