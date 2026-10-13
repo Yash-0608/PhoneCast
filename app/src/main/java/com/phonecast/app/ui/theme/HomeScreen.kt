@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -70,6 +71,15 @@ fun HomeScreen(
                 )
             )
     ) {
+
+        Image(
+            painter = painterResource(id = R.drawable.phonecast_warm_mountains),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.16f),
+            contentScale = ContentScale.Crop
+        )
 
         LazyColumn(
             modifier = Modifier
