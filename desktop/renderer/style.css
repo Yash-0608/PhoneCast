@@ -3140,3 +3140,1041 @@ img {
             none;
     }
 }
+
+
+/* ============================================================
+   PHONECAST CONTROL CENTRE
+   Persistent phone preview + right-side workspaces.
+   Added after the legacy casting styles so this layout can be
+   introduced without changing other PhoneCast pages.
+   ============================================================ */
+
+.phonecast-control-centre {
+    --pc-panel: #071521;
+    --pc-panel-raised: #0b1c2a;
+    --pc-panel-soft: #0d2130;
+    --pc-line: rgba(67, 171, 225, .19);
+    --pc-line-strong: rgba(0, 168, 255, .52);
+    --pc-muted: #8ea6b8;
+    --pc-blue: #00a8ff;
+    --pc-blue-soft: rgba(0, 168, 255, .12);
+}
+
+.phonecast-control-centre .casting-header {
+    gap: 14px;
+    padding: 0 16px;
+}
+
+.phonecast-control-centre .casting-brand {
+    min-width: 154px;
+}
+
+.phonecast-control-centre .casting-status {
+    min-width: 130px;
+}
+
+.phonecast-control-centre .casting-window-actions {
+    gap: 5px;
+}
+
+.phonecast-control-centre .casting-window-actions button {
+    height: 31px;
+    padding: 0 9px;
+    white-space: nowrap;
+    font-size: 8px;
+}
+
+.phonecast-control-main {
+    display: grid;
+    grid-template-columns: minmax(330px, .78fr) minmax(0, 1.42fr);
+    gap: 12px;
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    padding: 12px;
+    overflow: hidden;
+}
+
+.phonecast-preview-column {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-width: 0;
+    min-height: 0;
+    gap: 10px;
+}
+
+.phonecast-preview-column .viewer-shell {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    border-color: var(--pc-line);
+    border-radius: 14px;
+    background: #02070c;
+}
+
+.phonecast-preview-column #phoneCastVideoCanvas {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.phonecast-preview-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--pc-line);
+    border-radius: 13px;
+    background: linear-gradient(150deg, rgba(10, 28, 42, .96), rgba(4, 13, 21, .98));
+}
+
+.preview-controls-heading,
+.workspace-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.preview-controls-heading > div,
+.workspace-card-heading > div {
+    min-width: 0;
+}
+
+.preview-controls-heading strong {
+    display: block;
+    margin-top: 3px;
+    color: #edf7ff;
+    font-size: 12px;
+}
+
+.workspace-eyebrow {
+    display: block;
+    color: #53bfff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.25px;
+    line-height: 1.4;
+}
+
+.preview-connected-chip,
+.integration-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    min-height: 23px;
+    padding: 0 8px;
+    border: 1px solid rgba(24, 199, 123, .2);
+    border-radius: 999px;
+    color: #82e2b2;
+    background: rgba(24, 199, 123, .06);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .4px;
+}
+
+.feature-status-dot {
+    width: 6px;
+    height: 6px;
+    display: inline-block;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #19d879;
+    box-shadow: 0 0 9px rgba(25, 216, 121, .5);
+}
+
+.integration-pill.pending {
+    border-color: rgba(255, 190, 80, .24);
+    color: #eac17b;
+    background: rgba(255, 190, 80, .055);
+}
+
+.preview-control-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 8px;
+}
+
+.preview-mode-switch,
+.remote-navigation-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    min-width: 0;
+}
+
+.phonecast-control-centre .preview-mode-switch button,
+.phonecast-control-centre .remote-navigation-controls button {
+    min-width: 0;
+    height: 32px;
+    padding: 0 5px;
+    border: 1px solid var(--pc-line);
+    border-radius: 7px;
+    color: #b5c9d8;
+    background: rgba(0, 168, 255, .045);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .25px;
+    white-space: nowrap;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+.phonecast-control-centre .remote-navigation-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.phonecast-control-centre .preview-mode-switch button[aria-pressed="true"] {
+    border-color: var(--pc-line-strong);
+    color: #eef9ff;
+    background: rgba(0, 168, 255, .17);
+    box-shadow: inset 0 0 0 1px rgba(0, 168, 255, .08);
+}
+
+.phonecast-control-centre .preview-mode-switch button:hover,
+.phonecast-control-centre .remote-navigation-controls button:hover {
+    border-color: var(--pc-line-strong);
+    color: #ffffff;
+    background: rgba(0, 168, 255, .12);
+}
+
+.preview-device-details {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, .8fr) minmax(0, .8fr);
+    gap: 7px;
+    padding-top: 9px;
+    border-top: 1px solid rgba(117, 170, 204, .12);
+}
+
+.preview-device-details > div {
+    min-width: 0;
+}
+
+.preview-device-details span {
+    color: var(--pc-muted);
+    font-size: 8px;
+    line-height: 1.45;
+}
+
+.preview-device-details > div > span:first-child {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .7px;
+}
+
+.preview-device-details strong {
+    display: block;
+    overflow: hidden;
+    color: #dcebf6;
+    font-size: 9px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.phonecast-workspace-column {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 10px;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.phonecast-module-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+    min-width: 0;
+    padding: 6px;
+    border: 1px solid var(--pc-line);
+    border-radius: 12px;
+    background: rgba(4, 14, 23, .97);
+}
+
+.phonecast-module-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 9px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: #9eb4c5;
+    background: transparent;
+    font-size: 11px;
+    cursor: pointer;
+    transition: color .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.phonecast-module-tab > span {
+    color: #58c4ff;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.phonecast-module-tab strong {
+    overflow: hidden;
+    font-size: 10px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.phonecast-module-tab:hover {
+    color: #ffffff;
+    background: rgba(0, 168, 255, .07);
+}
+
+.phonecast-module-tab.active {
+    border-color: rgba(0, 168, 255, .48);
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(0, 151, 255, .24), rgba(0, 168, 255, .09));
+    box-shadow: 0 0 16px rgba(0, 168, 255, .08), inset 0 0 0 1px rgba(0, 168, 255, .06);
+}
+
+.phonecast-workspace-content {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: rgba(68, 130, 166, .36) transparent;
+    scrollbar-width: thin;
+    border: 1px solid var(--pc-line);
+    border-radius: 14px;
+    background: linear-gradient(155deg, rgba(9, 25, 38, .98), rgba(3, 12, 20, .99));
+}
+
+.workspace-view {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    min-width: 0;
+    min-height: 100%;
+    padding: 18px;
+}
+
+.workspace-view-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.workspace-view-header h2 {
+    margin: 5px 0 4px;
+    color: #f0f8ff;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -.4px;
+}
+
+.workspace-view-header p {
+    margin: 0;
+    color: var(--pc-muted);
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.workspace-header-icon {
+    display: grid;
+    place-items: center;
+    width: 45px;
+    height: 45px;
+    flex: 0 0 auto;
+    border: 1px solid var(--pc-line);
+    border-radius: 12px;
+    color: #65caff;
+    background: rgba(0, 168, 255, .07);
+    font-size: 22px;
+}
+
+.call-icon {
+    color: #39dda0;
+    background: rgba(24, 199, 123, .07);
+    border-color: rgba(24, 199, 123, .2);
+}
+
+.phoney-icon {
+    color: #b39cff;
+    background: rgba(154, 118, 255, .08);
+    border-color: rgba(154, 118, 255, .22);
+}
+
+.settings-icon {
+    color: #58c4ff;
+}
+
+.workspace-view-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 12px;
+}
+
+.workspace-subtabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 5px;
+    border: 1px solid var(--pc-line);
+    border-radius: 10px;
+    background: rgba(3, 12, 20, .78);
+}
+
+.workspace-subtab {
+    min-height: 32px;
+    padding: 0 13px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    color: #9db3c4;
+    background: transparent;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    cursor: pointer;
+}
+
+.workspace-subtab.active {
+    border-color: var(--pc-line-strong);
+    color: #ffffff;
+    background: var(--pc-blue-soft);
+}
+
+.workspace-subtab:hover {
+    color: #ffffff;
+}
+
+.calls-layout {
+    display: grid;
+    grid-template-columns: minmax(285px, .95fr) minmax(0, 1.05fr);
+    align-items: stretch;
+    gap: 12px;
+}
+
+.workspace-card {
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid rgba(68, 151, 197, .17);
+    border-radius: 12px;
+    background: linear-gradient(150deg, rgba(14, 33, 48, .92), rgba(7, 20, 31, .93));
+}
+
+.workspace-card-heading {
+    margin-bottom: 14px;
+}
+
+.workspace-card-heading h3 {
+    margin: 4px 0 0;
+    color: #eaf5ff;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.dial-number-label {
+    display: block;
+    margin: 0 0 6px;
+    color: var(--pc-muted);
+    font-size: 10px;
+}
+
+.workspace-input {
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid rgba(95, 147, 179, .24);
+    border-radius: 8px;
+    outline: none;
+    color: #eaf5ff;
+    background: rgba(2, 10, 17, .72);
+    font: inherit;
+    font-size: 11px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.workspace-input::placeholder {
+    color: #6f899d;
+    opacity: 1;
+}
+
+.workspace-input:focus {
+    border-color: rgba(0, 168, 255, .65);
+    box-shadow: 0 0 0 3px rgba(0, 168, 255, .09);
+}
+
+.workspace-input:disabled {
+    color: #71889a;
+    cursor: not-allowed;
+    background: rgba(2, 10, 17, .45);
+}
+
+.dial-number-input {
+    margin-bottom: 12px;
+    height: 43px;
+    text-align: center;
+    font-size: 17px;
+    letter-spacing: 1px;
+}
+
+.phonecast-dialpad {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.dialpad-key {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    min-height: 52px;
+    border: 1px solid rgba(90, 145, 177, .17);
+    border-radius: 9px;
+    color: #edf7ff;
+    background: linear-gradient(145deg, rgba(24, 44, 59, .9), rgba(9, 24, 37, .95));
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, transform .08s ease;
+}
+
+.dialpad-key strong {
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.dialpad-key span {
+    color: #8ba6b8;
+    font-size: 8px;
+    letter-spacing: 1px;
+}
+
+.dialpad-key:hover {
+    border-color: var(--pc-line-strong);
+    background: rgba(0, 168, 255, .12);
+}
+
+.dialpad-key:active {
+    transform: scale(.98);
+}
+
+.dialer-actions {
+    display: grid;
+    grid-template-columns: auto auto minmax(90px, 1fr);
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.workspace-primary-button,
+.workspace-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 35px;
+    padding: 0 12px;
+    border: 1px solid var(--pc-line);
+    border-radius: 8px;
+    color: #d9edf9;
+    background: rgba(0, 168, 255, .06);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .3px;
+    cursor: pointer;
+}
+
+.workspace-primary-button {
+    border-color: rgba(0, 168, 255, .62);
+    color: #ffffff;
+    background: linear-gradient(100deg, #078ce8, #04b0f0);
+    box-shadow: 0 5px 15px rgba(0, 137, 232, .12);
+}
+
+.call-action-button {
+    border-color: rgba(17, 220, 132, .35);
+    background: linear-gradient(100deg, #05a962, #09c97c);
+}
+
+.workspace-primary-button:disabled,
+.workspace-secondary-button:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+}
+
+.workspace-secondary-button:hover:not(:disabled) {
+    border-color: var(--pc-line-strong);
+    background: rgba(0, 168, 255, .12);
+}
+
+.workspace-inline-status {
+    margin: 10px 0 0;
+    color: #e9c27b;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.workspace-full-card {
+    min-height: 300px;
+}
+
+.workspace-empty-state,
+.conversation-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 210px;
+    padding: 22px;
+    text-align: center;
+}
+
+.compact-empty-state {
+    min-height: 175px;
+    padding: 16px 8px;
+}
+
+.workspace-empty-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(0, 168, 255, .22);
+    border-radius: 14px;
+    color: #4dbfff;
+    background: rgba(0, 168, 255, .07);
+    font-size: 23px;
+}
+
+.workspace-empty-state strong,
+.conversation-empty-state strong {
+    color: #dcebf6;
+    font-size: 12px;
+}
+
+.workspace-empty-state p,
+.conversation-empty-state p {
+    max-width: 460px;
+    margin: 0;
+    color: var(--pc-muted);
+    font-size: 10px;
+    line-height: 1.65;
+}
+
+.workspace-feature-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(117, 170, 204, .12);
+    color: var(--pc-muted);
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+.messages-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.workspace-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding-left: 10px;
+    border: 1px solid rgba(95, 147, 179, .24);
+    border-radius: 8px;
+    color: #7fbce0;
+    background: rgba(2, 10, 17, .72);
+}
+
+.workspace-search-wrap > span {
+    flex: 0 0 auto;
+    font-size: 19px;
+}
+
+.workspace-search-wrap .workspace-input {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.message-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.message-filter-chip {
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--pc-line);
+    border-radius: 7px;
+    color: #a0b6c6;
+    background: rgba(0, 168, 255, .035);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .25px;
+    cursor: pointer;
+}
+
+.message-filter-chip.active {
+    border-color: var(--pc-line-strong);
+    color: #ffffff;
+    background: rgba(0, 168, 255, .17);
+}
+
+.messages-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+    gap: 12px;
+    min-height: 0;
+    flex: 1;
+}
+
+.messages-list-card,
+.message-conversation-card {
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+}
+
+.messages-list-card .workspace-empty-state {
+    flex: 1;
+}
+
+.message-conversation-card {
+    gap: 12px;
+}
+
+.conversation-empty-state {
+    flex: 1;
+}
+
+.message-reply-composer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 38px;
+    gap: 7px;
+    margin-top: auto;
+}
+
+.message-reply-composer .workspace-primary-button {
+    min-width: 0;
+    padding: 0;
+}
+
+.phoney-chat-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 18px;
+    min-height: 0;
+}
+
+.phoney-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding: 24px 14px 12px;
+    text-align: center;
+}
+
+.phoney-orb {
+    display: grid;
+    place-items: center;
+    width: 92px;
+    height: 92px;
+    margin-bottom: 7px;
+    border: 1px solid rgba(119, 141, 255, .6);
+    border-radius: 30px;
+    color: #c8bdff;
+    background: radial-gradient(circle at 34% 26%, rgba(0, 168, 255, .27), rgba(108, 79, 255, .10) 52%, rgba(7, 15, 31, .96));
+    box-shadow: 0 0 32px rgba(86, 111, 255, .16), inset 0 0 25px rgba(0, 168, 255, .09);
+    font-size: 35px;
+}
+
+.phoney-welcome h3 {
+    margin: 0;
+    color: #f0f8ff;
+    font-size: 20px;
+}
+
+.phoney-welcome p {
+    max-width: 360px;
+    margin: 0;
+    color: var(--pc-muted);
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+.phoney-suggestion-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: auto;
+}
+
+.phoney-suggestion {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 2px 8px;
+    min-height: 58px;
+    padding: 10px;
+    border: 1px solid rgba(90, 145, 177, .17);
+    border-radius: 9px;
+    color: #99adbc;
+    background: rgba(8, 21, 32, .75);
+    text-align: left;
+}
+
+.phoney-suggestion > span {
+    grid-row: span 2;
+    color: #8ba8ff;
+    font-size: 18px;
+}
+
+.phoney-suggestion strong {
+    font-size: 9px;
+    line-height: 1.4;
+}
+
+.phoney-suggestion small {
+    color: #748b9c;
+    font-size: 8px;
+}
+
+.phoney-composer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(117, 170, 204, .12);
+}
+
+.phoney-composer .workspace-primary-button {
+    min-width: 0;
+    padding: 0;
+}
+
+.settings-search-wrap {
+    flex: 0 0 auto;
+}
+
+.settings-category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.settings-category-card {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) 12px;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 68px;
+    padding: 10px;
+    border: 1px solid rgba(90, 145, 177, .17);
+    border-radius: 9px;
+    color: #d9e8f3;
+    background: rgba(10, 26, 39, .82);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+}
+
+.settings-category-card:hover {
+    border-color: var(--pc-line-strong);
+    background: rgba(0, 168, 255, .08);
+}
+
+.settings-category-icon {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    color: #51c1ff;
+    background: rgba(0, 168, 255, .08);
+    font-size: 17px;
+}
+
+.settings-category-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.settings-category-copy strong {
+    overflow: hidden;
+    color: #dcebf6;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-category-copy small {
+    overflow: hidden;
+    color: var(--pc-muted);
+    font-size: 8px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+}
+
+.settings-category-arrow {
+    color: #66869d;
+    font-size: 18px;
+}
+
+@media (max-width: 1380px) {
+    .phonecast-control-centre .casting-brand {
+        min-width: 125px;
+    }
+
+    .phonecast-control-centre .casting-header {
+        gap: 9px;
+        padding: 0 10px;
+    }
+
+    .phonecast-control-centre .casting-window-actions {
+        gap: 4px;
+    }
+
+    .phonecast-control-centre .casting-window-actions button {
+        padding: 0 6px;
+        font-size: 7px;
+    }
+
+    .phonecast-control-main {
+        grid-template-columns: minmax(285px, .72fr) minmax(0, 1.35fr);
+        gap: 9px;
+        padding: 9px;
+    }
+
+    .workspace-view {
+        padding: 13px;
+    }
+
+    .calls-layout {
+        grid-template-columns: minmax(255px, .95fr) minmax(0, 1.05fr);
+        gap: 9px;
+    }
+
+    .workspace-card {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 1050px) {
+    .phonecast-control-centre .casting-header {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 64px;
+        padding: 8px 10px;
+    }
+
+    .phonecast-control-centre .casting-status {
+        min-width: 0;
+    }
+
+    .phonecast-control-centre .casting-window-actions {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .phonecast-control-main {
+        grid-template-columns: minmax(250px, .65fr) minmax(0, 1.35fr);
+    }
+
+    .calls-layout,
+    .messages-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .call-side-card {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .phonecast-control-centre {
+        overflow: auto;
+    }
+
+    .phonecast-control-main {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .phonecast-preview-column {
+        grid-template-rows: minmax(320px, 48vh) auto;
+        flex: 0 0 auto;
+    }
+
+    .phonecast-workspace-column {
+        min-height: 520px;
+        flex: 1 0 auto;
+    }
+
+    .phonecast-workspace-content {
+        overflow: visible;
+    }
+
+    .phonecast-control-centre .casting-window-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .workspace-view-header h2 {
+        font-size: 19px;
+    }
+}
+
+@media (max-width: 640px) {
+    .phonecast-module-tabs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 3px;
+        padding: 4px;
+    }
+
+    .phonecast-module-tab {
+        flex-direction: column;
+        gap: 3px;
+        padding: 5px 2px;
+    }
+
+    .phonecast-module-tab strong {
+        font-size: 8px;
+    }
+
+    .preview-control-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .settings-category-grid,
+    .phoney-suggestion-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .preview-device-details {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .preview-device-details > div:last-child {
+        grid-column: span 2;
+    }
+}
