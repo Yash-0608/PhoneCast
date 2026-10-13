@@ -126,6 +126,9 @@ class PhoneCastAccessibilityService : AccessibilityService() {
                         points.drop(1).forEach { point ->
                             lineTo(point.x, point.y)
                         }
+                        if (points.size == 1) {
+                            lineTo(points.first().x + 0.1f, points.first().y + 0.1f)
+                        }
                     }
 
                     val stroke = GestureDescription.StrokeDescription(
@@ -183,6 +186,12 @@ class PhoneCastAccessibilityService : AccessibilityService() {
 
             val path = Path().apply {
                 moveTo(x, y)
+                /*
+                 * Create a real, sub-pixel stroke so Android does not treat
+                 * the tap path as empty. The displacement is visually
+                 * negligible but keeps the GestureDescription valid.
+                 */
+                lineTo(x + 0.1f, y + 0.1f)
             }
 
             val gesture = GestureDescription.Builder()
