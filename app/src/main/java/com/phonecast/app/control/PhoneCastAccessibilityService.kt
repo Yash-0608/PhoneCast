@@ -78,7 +78,7 @@ class PhoneCastAccessibilityService : AccessibilityService() {
             when (normalizedAction) {
 
                 "tap" -> {
-                    return service.dispatchTap(x, y)
+                    return dispatchTap(x, y)
                 }
 
                 "down" -> {
