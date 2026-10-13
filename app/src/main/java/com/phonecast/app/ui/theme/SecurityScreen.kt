@@ -242,6 +242,9 @@ fun SecurityScreen(
                     contentDescription = "Fingerprint security",
                     modifier = Modifier
                         .size(190.dp),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                        PhoneCastColors.NeonBlue
+                    ),
                     contentScale = ContentScale.Fit
                 )
             }
