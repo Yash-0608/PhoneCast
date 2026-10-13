@@ -2787,7 +2787,8 @@ ipcMain.handle(
                 "INPUT_TOUCH",
                 "INPUT_SCROLL",
                 "INPUT_TEXT",
-                "INPUT_KEY"
+                "INPUT_KEY",
+                "PHONE_ACTION"
             ].includes(message.type)
         ) {
 
