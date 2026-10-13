@@ -2264,6 +2264,12 @@ export function showCastingPage() {
                         aria-hidden="true"
                     ></canvas>
 
+                    <span
+                        id="phoneCastRemoteCursor"
+                        class="phonecast-remote-cursor hidden"
+                        aria-hidden="true"
+                    ></span>
+
 
                     <div
                         id="phoneCastViewerEmpty"
@@ -2318,6 +2324,38 @@ export function showCastingPage() {
                             </button>
 
                         </div>
+
+                    </div>
+
+                    <div class="info-card quick-navigation-card">
+
+                        <label>NAVIGATION</label>
+
+                        <div class="remote-navigation-controls">
+
+                            <button
+                                type="button"
+                                id="phoneBackButton"
+                                title="Android Back"
+                            >BACK</button>
+
+                            <button
+                                type="button"
+                                id="phoneHomeButton"
+                                title="Android Home"
+                            >HOME</button>
+
+                            <button
+                                type="button"
+                                id="phoneRecentsButton"
+                                title="Android Recent apps"
+                            >RECENTS</button>
+
+                        </div>
+
+                        <p class="input-mode-hint">
+                            Move to the bottom of the phone screen and swipe up to open Recents.
+                        </p>
 
                     </div>
 
@@ -2448,6 +2486,34 @@ export function showCastingPage() {
         );
 
 
+    document
+        .getElementById("phoneBackButton")
+        ?.addEventListener("click", () => {
+            sendRemoteInput({
+                type: "INPUT_KEY",
+                key: "BACK"
+            });
+        });
+
+    document
+        .getElementById("phoneHomeButton")
+        ?.addEventListener("click", () => {
+            sendRemoteInput({
+                type: "INPUT_KEY",
+                key: "HOME"
+            });
+        });
+
+    document
+        .getElementById("phoneRecentsButton")
+        ?.addEventListener("click", () => {
+            sendRemoteInput({
+                type: "INPUT_KEY",
+                key: "RECENTS"
+            });
+        });
+
+
     initializeVideoViewerSafely();
 
     setupRemoteInput();
@@ -2458,11 +2524,13 @@ export function showCastingPage() {
 function setupRemoteInput() {
 
     const canvas =
-        document.getElementById(
-            "phoneCastVideoCanvas"
-        );
+        document.getElementById("phoneCastVideoCanvas");
 
-    if (!canvas) {
+    const cursor =
+        document.getElementById("phoneCastRemoteCursor");
+
+    if (!canvas || !cursor) {
+        console.error("[PhoneCast Input] Viewer canvas or remote cursor is missing.");
         return;
     }
 
@@ -2478,23 +2546,33 @@ function setupRemoteInput() {
     let inputMode = "touch";
     let pointerActive = false;
     let activePointerId = null;
+    let dragStartPoint = null;
     let lastPointerPoint = null;
-    let lastPointerSentAt = 0;
+    let dragStartedAt = 0;
 
+    let wheelTimer = null;
+    let wheelDeltaX = 0;
+    let wheelDeltaY = 0;
+    let wheelPoint = null;
+
+    const sourceSize = () => ({
+        width: Number(state.video.width || canvas.width),
+        height: Number(state.video.height || canvas.height)
+    });
+
+    /*
+     * Translate Electron's CSS-pixel pointer into the actual phone
+     * video coordinates. Account for letterboxing and landscape-fit crop.
+     */
     const getScreenPoint = event => {
         const rect = canvas.getBoundingClientRect();
-        const sourceWidth =
-            state.video.width ||
-            canvas.width;
-        const sourceHeight =
-            state.video.height ||
-            canvas.height;
+        const { width: sourceWidth, height: sourceHeight } = sourceSize();
 
         if (
-            !rect.width ||
-            !rect.height ||
-            !sourceWidth ||
-            !sourceHeight
+            rect.width <= 0 ||
+            rect.height <= 0 ||
+            sourceWidth <= 0 ||
+            sourceHeight <= 0
         ) {
             return null;
         }
@@ -2512,18 +2590,12 @@ function setupRemoteInput() {
                 rect.height / sourceHeight
             );
 
-        const renderedWidth =
-            sourceWidth * scale;
-        const renderedHeight =
-            sourceHeight * scale;
-        const offsetX =
-            (rect.width - renderedWidth) / 2;
-        const offsetY =
-            (rect.height - renderedHeight) / 2;
-        const localX =
-            event.clientX - rect.left;
-        const localY =
-            event.clientY - rect.top;
+        const renderedWidth = sourceWidth * scale;
+        const renderedHeight = sourceHeight * scale;
+        const offsetX = (rect.width - renderedWidth) / 2;
+        const offsetY = (rect.height - renderedHeight) / 2;
+        const localX = event.clientX - rect.left;
+        const localY = event.clientY - rect.top;
 
         if (
             !isLandscapeFit &&
@@ -2537,115 +2609,133 @@ function setupRemoteInput() {
             return null;
         }
 
-        const sourceX =
-            (localX - offsetX) / scale;
-        const sourceY =
-            (localY - offsetY) / scale;
-
         return {
             x: Math.round(Math.max(
                 0,
-                Math.min(
-                    sourceWidth - 1,
-                    sourceX
-                )
+                Math.min(sourceWidth - 1, (localX - offsetX) / scale)
             )),
             y: Math.round(Math.max(
                 0,
-                Math.min(
-                    sourceHeight - 1,
-                    sourceY
-                )
+                Math.min(sourceHeight - 1, (localY - offsetY) / scale)
             ))
         };
     };
 
+    const hideRemoteCursor = () => {
+        cursor.classList.add("hidden");
+    };
+
+    /*
+     * The cursor is drawn by the desktop over the live viewer. It is
+     * deliberately NOT sent to Android as a continuous touch: Android
+     * touchscreens have taps and gestures, not a universal hover cursor.
+     */
+    const updateRemoteCursor = (event, point) => {
+        if (!point || !viewer) {
+            hideRemoteCursor();
+            return;
+        }
+
+        const viewerRect = viewer.getBoundingClientRect();
+        cursor.style.left = `${event.clientX - viewerRect.left}px`;
+        cursor.style.top = `${event.clientY - viewerRect.top}px`;
+        cursor.classList.remove("hidden");
+        cursor.classList.toggle("pointer-mode", inputMode === "pointer");
+    };
+
     const setInputMode = mode => {
-        inputMode =
-            mode === "pointer"
-                ? "pointer"
-                : "touch";
+        inputMode = mode === "pointer" ? "pointer" : "touch";
 
-        if (touchModeButton) {
-            touchModeButton.setAttribute(
-                "aria-pressed",
-                String(inputMode === "touch")
-            );
-        }
+        touchModeButton?.setAttribute(
+            "aria-pressed",
+            String(inputMode === "touch")
+        );
 
-        if (pointerModeButton) {
-            pointerModeButton.setAttribute(
-                "aria-pressed",
-                String(inputMode === "pointer")
-            );
-        }
-
-        /*
-         * Touch mode hides the desktop cursor while it is over the
-         * viewer. Pointer mode keeps the normal OS cursor visible.
-         * No synthetic red-dot overlay is drawn on top of the stream.
-         */
-        canvas.style.cursor =
-            inputMode === "touch"
-                ? "none"
-                : "default";
+        pointerModeButton?.setAttribute(
+            "aria-pressed",
+            String(inputMode === "pointer")
+        );
 
         if (viewer) {
             viewer.dataset.inputMode = inputMode;
         }
+
+        cursor.classList.toggle("pointer-mode", inputMode === "pointer");
+
+        /*
+         * The remote cursor overlay replaces the native cursor only while
+         * the pointer is over the actual phone image.
+         */
+        canvas.style.cursor = "none";
     };
 
-    const cancelActiveGesture = () => {
-        if (!pointerActive) {
-            return;
-        }
-
-        const last =
-            lastPointerPoint || {
-                x: 0,
-                y: 0
-            };
-
-        sendRemoteInput({
-            type: "INPUT_TOUCH",
-            action: "cancel",
-            pointerId: activePointerId ?? 0,
-            x: last.x,
-            y: last.y,
-            timestamp: Date.now()
-        });
+    const resetLocalPointer = () => {
+        pointerActive = false;
+        activePointerId = null;
+        dragStartPoint = null;
+        lastPointerPoint = null;
+        dragStartedAt = 0;
 
         try {
             if (activePointerId !== null) {
-                canvas.releasePointerCapture?.(
-                    activePointerId
-                );
+                canvas.releasePointerCapture?.(activePointerId);
             }
         } catch (_) {
-            // Pointer capture may already have been released.
+            // The browser may already have released capture.
         }
-
-        pointerActive = false;
-        activePointerId = null;
-        lastPointerPoint = null;
     };
 
-    touchModeButton?.addEventListener(
-        "click",
-        () => setInputMode("touch")
-    );
-
-    pointerModeButton?.addEventListener(
-        "click",
-        () => setInputMode("pointer")
-    );
-
+    touchModeButton?.addEventListener("click", () => setInputMode("touch"));
+    pointerModeButton?.addEventListener("click", () => setInputMode("pointer"));
     setInputMode("touch");
 
     /*
-     * Pointer down/up represent an actual tap. Keeping the gesture
-     * lifecycle intact lets Android receive a real DOWN -> MOVE -> UP
-     * sequence rather than a mouse cursor drawn into the video.
+     * Cursor movement is independent from clicking. This is the key
+     * difference from the previous implementation, which ignored all
+     * pointer movement unless a mouse button was already held.
+     */
+    canvas.addEventListener("pointermove", event => {
+        const point = getScreenPoint(event);
+        updateRemoteCursor(event, point);
+
+        if (
+            !pointerActive ||
+            (
+                activePointerId !== null &&
+                event.pointerId !== activePointerId
+            )
+        ) {
+            return;
+        }
+
+        if (point) {
+            lastPointerPoint = point;
+        }
+
+        event.preventDefault();
+    });
+
+    canvas.addEventListener("pointerenter", event => {
+        const point = getScreenPoint(event);
+        updateRemoteCursor(event, point);
+        canvas.style.cursor = "none";
+    });
+
+    canvas.addEventListener("pointerleave", () => {
+        if (!pointerActive) {
+            hideRemoteCursor();
+        }
+        canvas.style.cursor = "default";
+    });
+
+    /*
+     * Do not send a long-running Android DOWN stroke immediately. The
+     * previous implementation sent independent DOWN/MOVE/UP gestures,
+     * which can cancel one another through AccessibilityService.
+     *
+     * Instead:
+     * - a click/tap sends one complete tap gesture;
+     * - a pressed drag sends one complete Android drag path on release.
      */
     canvas.addEventListener("pointerdown", event => {
         if (event.button !== 0 || pointerActive) {
@@ -2659,72 +2749,18 @@ function setupRemoteInput() {
 
         pointerActive = true;
         activePointerId = event.pointerId;
+        dragStartPoint = point;
         lastPointerPoint = point;
-        lastPointerSentAt = performance.now();
+        dragStartedAt = performance.now();
 
         try {
             canvas.setPointerCapture?.(event.pointerId);
         } catch (_) {
-            // Continue with normal events if capture is unavailable.
+            // Pointer capture is an enhancement; normal events still work.
         }
 
         canvas.focus();
-
-        sendRemoteInput({
-            type: "INPUT_TOUCH",
-            action: "down",
-            pointerId: event.pointerId || 0,
-            x: point.x,
-            y: point.y,
-            timestamp: Date.now()
-        });
-
-        event.preventDefault();
-    });
-
-    canvas.addEventListener("pointermove", event => {
-        if (
-            !pointerActive ||
-            (
-                activePointerId !== null &&
-                event.pointerId !== activePointerId
-            )
-        ) {
-            return;
-        }
-
-        const point = getScreenPoint(event);
-        if (!point) {
-            return;
-        }
-
-        const now = performance.now();
-        const moved =
-            !lastPointerPoint ||
-            Math.hypot(
-                point.x - lastPointerPoint.x,
-                point.y - lastPointerPoint.y
-            ) >= 1;
-
-        if (
-            !moved ||
-            now - lastPointerSentAt < 8
-        ) {
-            return;
-        }
-
-        lastPointerPoint = point;
-        lastPointerSentAt = now;
-
-        sendRemoteInput({
-            type: "INPUT_TOUCH",
-            action: "move",
-            pointerId: event.pointerId || 0,
-            x: point.x,
-            y: point.y,
-            timestamp: Date.now()
-        });
-
+        updateRemoteCursor(event, point);
         event.preventDefault();
     });
 
@@ -2740,158 +2776,185 @@ function setupRemoteInput() {
             return;
         }
 
-        const end =
+        const endPoint =
             getScreenPoint(event) ||
-            lastPointerPoint;
+            lastPointerPoint ||
+            dragStartPoint;
 
-        if (end) {
-            sendRemoteInput({
-                type: "INPUT_TOUCH",
-                action: "up",
-                pointerId: event.pointerId || 0,
-                x: end.x,
-                y: end.y,
-                timestamp: Date.now()
-            });
+        const startPoint = dragStartPoint;
+
+        if (startPoint && endPoint) {
+            const distance = Math.hypot(
+                endPoint.x - startPoint.x,
+                endPoint.y - startPoint.y
+            );
+
+            if (distance < 8) {
+                sendRemoteInput({
+                    type: "INPUT_TOUCH",
+                    action: "tap",
+                    pointerId: event.pointerId || 0,
+                    x: endPoint.x,
+                    y: endPoint.y,
+                    timestamp: Date.now()
+                });
+            } else {
+                const durationMs = Math.max(
+                    100,
+                    Math.min(
+                        700,
+                        performance.now() - dragStartedAt
+                    )
+                );
+
+                sendRemoteInput({
+                    type: "INPUT_SCROLL",
+                    startX: startPoint.x,
+                    startY: startPoint.y,
+                    endX: endPoint.x,
+                    endY: endPoint.y,
+                    durationMs
+                });
+            }
         }
-
-        pointerActive = false;
-        activePointerId = null;
-        lastPointerPoint = null;
 
         try {
             canvas.releasePointerCapture?.(event.pointerId);
         } catch (_) {
-            // The browser may already have released pointer capture.
+            // Pointer capture can already have been released.
         }
+
+        pointerActive = false;
+        activePointerId = null;
+        dragStartPoint = null;
+        lastPointerPoint = null;
+        dragStartedAt = 0;
 
         event.preventDefault();
     });
 
-    canvas.addEventListener("pointercancel", event => {
-        if (
-            !pointerActive ||
-            (
-                activePointerId !== null &&
-                event.pointerId !== activePointerId
-            )
-        ) {
-            return;
-        }
-
-        cancelActiveGesture();
+    canvas.addEventListener("pointercancel", () => {
+        /*
+         * Nothing has been injected until pointerup, so cancellation
+         * cannot leave an Android finger stuck down.
+         */
+        pointerActive = false;
+        activePointerId = null;
+        dragStartPoint = null;
+        lastPointerPoint = null;
+        dragStartedAt = 0;
     });
 
     /*
-     * Touch Mode interprets two-finger touchpad scroll events as
-     * phone swipes on either axis. Pointer Mode retains conventional
-     * vertical scrolling while still allowing taps and drags.
-     *
-     * Note: standard Electron DOM events do not expose raw one-finger
-     * Windows Precision Touchpad contacts. Native Windows integration
-     * may be needed later if we want to use an unpressed one-finger
-     * trackpad movement as a direct phone-touch gesture.
+     * Windows touchpads normally emit wheel events for two-finger
+     * scrolling. Batch a burst into one complete gesture instead of
+     * flooding Android with overlapping dispatchGesture calls.
      */
+    const flushWheelGesture = () => {
+        wheelTimer = null;
+
+        const deltaX = wheelDeltaX;
+        const deltaY = wheelDeltaY;
+        const point = wheelPoint;
+
+        wheelDeltaX = 0;
+        wheelDeltaY = 0;
+        wheelPoint = null;
+
+        if (!point || (!deltaX && !deltaY)) {
+            return;
+        }
+
+        const { width, height } = sourceSize();
+        if (!width || !height) {
+            return;
+        }
+
+        /*
+         * Android gesture navigation: when the remote cursor is at the
+         * bottom edge, an upward two-finger swipe opens Android Recents.
+         * A dedicated Recents button is also available in the sidebar.
+         *
+         * Positive/negative wheel values follow Chromium's scrolling
+         * convention; a negative Y delta represents a swipe-up gesture.
+         */
+        if (
+            inputMode === "touch" &&
+            deltaY <= -100 &&
+            point.y >= height * 0.86
+        ) {
+            sendRemoteInput({
+                type: "INPUT_KEY",
+                key: "RECENTS"
+            });
+            return;
+        }
+
+        const useHorizontal =
+            Math.abs(deltaX) > Math.abs(deltaY);
+
+        let delta = useHorizontal ? deltaX : deltaY;
+        if (!delta) {
+            return;
+        }
+
+        const magnitude =
+            Math.max(90, Math.min(680, Math.abs(delta) * 2.2));
+
+        /*
+         * Match the finger direction rather than the browser's content
+         * scroll direction: negative X/Y becomes a left/up phone swipe.
+         */
+        const direction = delta < 0 ? -1 : 1;
+
+        const startX = useHorizontal
+            ? point.x - direction * magnitude * 0.5
+            : point.x;
+        const endX = useHorizontal
+            ? point.x + direction * magnitude * 0.5
+            : point.x;
+        const startY = useHorizontal
+            ? point.y
+            : point.y - direction * magnitude * 0.5;
+        const endY = useHorizontal
+            ? point.y
+            : point.y + direction * magnitude * 0.5;
+
+        sendRemoteInput({
+            type: "INPUT_SCROLL",
+            startX: Math.round(Math.max(0, Math.min(width - 1, startX))),
+            startY: Math.round(Math.max(0, Math.min(height - 1, startY))),
+            endX: Math.round(Math.max(0, Math.min(width - 1, endX))),
+            endY: Math.round(Math.max(0, Math.min(height - 1, endY))),
+            durationMs: 220
+        });
+    };
+
     canvas.addEventListener("wheel", event => {
         const point = getScreenPoint(event);
-
         if (!point) {
             return;
         }
 
-        const rawX =
-            Number(event.deltaX) || 0;
-        const rawY =
-            Number(event.deltaY) || 0;
+        const modeMultiplier =
+            event.deltaMode === 1
+                ? 16
+                : event.deltaMode === 2
+                    ? Math.max(canvas.clientHeight, 1)
+                    : 1;
 
-        const useHorizontal =
-            inputMode === "touch" &&
-            Math.abs(rawX) > Math.abs(rawY);
+        wheelDeltaX += (Number(event.deltaX) || 0) * modeMultiplier;
+        wheelDeltaY += (Number(event.deltaY) || 0) * modeMultiplier;
+        wheelPoint = point;
 
-        const rawDelta =
-            useHorizontal
-                ? rawX
-                : rawY;
-
-        if (!rawDelta) {
-            return;
+        if (wheelTimer !== null) {
+            clearTimeout(wheelTimer);
         }
 
-        let delta = rawDelta;
-
-        if (event.deltaMode === 1) {
-            delta *= 16;
-        } else if (event.deltaMode === 2) {
-            delta *= useHorizontal
-                ? canvas.clientWidth
-                : canvas.clientHeight;
-        }
-
-        const distance =
-            Math.max(
-                100,
-                Math.min(
-                    700,
-                    Math.abs(delta) * 2.5
-                )
-            );
-
-        /*
-         * A downward/rightward touchpad scroll is translated into
-         * an upward/leftward finger swipe, matching typical content
-         * scrolling behaviour.
-         */
-        const direction =
-            delta > 0
-                ? -1
-                : 1;
-
-        const startX =
-            useHorizontal
-                ? point.x - (direction * distance * 0.5)
-                : point.x;
-
-        const endX =
-            useHorizontal
-                ? point.x + (direction * distance * 0.5)
-                : point.x;
-
-        const startY =
-            useHorizontal
-                ? point.y
-                : point.y - (direction * distance * 0.5);
-
-        const endY =
-            useHorizontal
-                ? point.y
-                : point.y + (direction * distance * 0.5);
-
-        const clampX = value =>
-            Math.round(Math.max(
-                0,
-                Math.min(
-                    (state.video.width || canvas.width) - 1,
-                    value
-                )
-            ));
-
-        const clampY = value =>
-            Math.round(Math.max(
-                0,
-                Math.min(
-                    (state.video.height || canvas.height) - 1,
-                    value
-                )
-            ));
-
-        sendRemoteInput({
-            type: "INPUT_SCROLL",
-            startX: clampX(startX),
-            startY: clampY(startY),
-            endX: clampX(endX),
-            endY: clampY(endY),
-            durationMs: 220
-        });
+        wheelTimer = setTimeout(
+            flushWheelGesture,
+            75
+        );
 
         event.preventDefault();
     }, {
@@ -2908,7 +2971,8 @@ function setupRemoteInput() {
         if (
             key.length === 1 &&
             !event.ctrlKey &&
-            !event.metaKey
+            !event.metaKey &&
+            !event.altKey
         ) {
             sendRemoteInput({
                 type: "INPUT_TEXT",
@@ -2934,19 +2998,29 @@ function setupRemoteInput() {
     });
 
     canvas.tabIndex = 0;
-    canvas.addEventListener(
-        "click",
-        () => canvas.focus()
-    );
+    canvas.addEventListener("click", () => canvas.focus());
 
-    /*
-     * Release remote touch state on page teardown/navigation.
-     */
-    window.addEventListener(
-        "beforeunload",
-        cancelActiveGesture,
-        { once: true }
-    );
+    window.addEventListener("blur", () => {
+        if (pointerActive) {
+            pointerActive = false;
+            activePointerId = null;
+            dragStartPoint = null;
+            lastPointerPoint = null;
+            dragStartedAt = 0;
+        }
+    });
+
+    window.addEventListener("beforeunload", () => {
+        if (wheelTimer !== null) {
+            clearTimeout(wheelTimer);
+            wheelTimer = null;
+        }
+        pointerActive = false;
+        activePointerId = null;
+        dragStartPoint = null;
+        lastPointerPoint = null;
+        dragStartedAt = 0;
+    }, { once: true });
 }
 
 
