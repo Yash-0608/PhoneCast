@@ -121,6 +121,9 @@ fun WelcomeScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                        PhoneCastColors.NeonBlue
+                    ),
                     contentScale = ContentScale.Fit
                 )
 
@@ -192,6 +195,9 @@ fun WelcomeScreen(
                     modifier = Modifier
                         .fillMaxWidth(0.72f)
                         .height(330.dp),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                        PhoneCastColors.NeonBlue
+                    ),
                     contentScale = ContentScale.Fit
                 )
             }
