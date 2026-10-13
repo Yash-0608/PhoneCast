@@ -2382,9 +2382,21 @@ function setupPhonecastWorkspaceContentEvents() {
     });
 
     host.querySelector("[data-dial-action='call']")?.addEventListener("click", function () {
-        phonecastWorkspaceNotice = phonecastDialNumber.trim()
-            ? "Calling integration is not connected yet. Use the live phone preview to place a call for now."
-            : "Enter a phone number first.";
+        var number = phonecastDialNumber.trim();
+        if (!number) {
+            phonecastWorkspaceNotice = "Enter a phone number first.";
+            renderPhonecastWorkspaceContent();
+            return;
+        }
+
+        void sendRemoteInput({
+            type: "PHONE_ACTION",
+            action: "OPEN_DIALER",
+            number: number
+        });
+
+        phonecastWorkspaceNotice =
+            "Dialer request sent. Confirm the number and place the call on the mirrored phone screen.";
         renderPhonecastWorkspaceContent();
     });
 
@@ -2412,15 +2424,30 @@ function setupPhonecastWorkspaceContentEvents() {
 
     host.querySelectorAll("[data-phonecast-setting-action]").forEach(function (button) {
         button.addEventListener("click", function () {
+            var action = button.dataset.phonecastSettingAction;
+            if (!action) {
+                return;
+            }
+
+            void sendRemoteInput({
+                type: "PHONE_ACTION",
+                action: action
+            });
+
             phonecastWorkspaceNotice =
-                "The phone-settings bridge will be connected in the Android integration phase.";
+                "Settings request sent. Check the mirrored phone screen for the Android system page.";
             renderPhonecastWorkspaceContent();
         });
     });
 
     host.querySelector("[data-phonecast-action='enable-notifications']")?.addEventListener("click", function () {
+        void sendRemoteInput({
+            type: "PHONE_ACTION",
+            action: "OPEN_NOTIFICATION_ACCESS_SETTINGS"
+        });
+
         phonecastWorkspaceNotice =
-            "Notification sync requires an Android notification-listener service and explicit user permission.";
+            "Notification access settings opened on the phone. Enable PhoneCast there; notification syncing is the next integration step.";
         var status = host.querySelector(".workspace-empty-state");
         if (status) {
             var note = document.createElement("p");
