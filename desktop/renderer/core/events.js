@@ -953,6 +953,167 @@ export function handleConnectionEvent(
 
 
         // ====================================================
+        // PHONE WORKSPACE DATA
+        // ====================================================
+
+        case "CALL_LOG_RESULT":
+
+            state.phoneData.calls =
+                Array.isArray(event.calls)
+                    ? event.calls
+                    : [];
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "phonecast:phone-data",
+                    { detail: event }
+                )
+            );
+
+            break;
+
+
+        case "CONTACTS_RESULT":
+
+            state.phoneData.contacts =
+                Array.isArray(event.contacts)
+                    ? event.contacts
+                    : [];
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "phonecast:phone-data",
+                    { detail: event }
+                )
+            );
+
+            break;
+
+
+        case "NOTIFICATION_SNAPSHOT":
+
+            state.phoneData.notificationAccessGranted = true;
+
+            state.phoneData.notifications =
+                Array.isArray(event.notifications)
+                    ? event.notifications
+                    : [];
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "phonecast:phone-data",
+                    { detail: event }
+                )
+            );
+
+            break;
+
+
+        case "PHONE_NOTIFICATION": {
+
+            const notification = event.notification;
+
+            if (notification && typeof notification.key === "string") {
+
+                const notifications =
+                    Array.isArray(state.phoneData.notifications)
+                        ? [...state.phoneData.notifications]
+                        : [];
+
+                const existingIndex =
+                    notifications.findIndex(
+                        item => item.key === notification.key
+                    );
+
+                if (existingIndex >= 0) {
+                    notifications[existingIndex] = notification;
+                } else {
+                    notifications.unshift(notification);
+                }
+
+                notifications.sort(
+                    (a, b) =>
+                        Number(b.postedAt || 0) -
+                        Number(a.postedAt || 0)
+                );
+
+                state.phoneData.notifications =
+                    notifications.slice(0, 100);
+            }
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "phonecast:phone-data",
+                    { detail: event }
+                )
+            );
+
+            break;
+        }
+
+
+        case "NOTIFICATION_ACCESS_REQUIRED":
+
+            state.phoneData.notificationAccessGranted = false;
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "phonecast:phone-data",
+                    { detail: event }
+                )
+            );
+
+            break;
+
+
+        case "NOTIFICATION_REPLY_RESULT":
+
+            state.phoneData.lastReplyResult = event;
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "phonecast:phone-data",
+                    { detail: event }
+                )
+            );
+
+            break;
+
+
+        case "PHONE_DATA_PERMISSION_DENIED":
+        case "PHONE_COMMAND_ERROR":
+
+            state.phoneData.lastCommandError =
+                safeString(
+                    event.message,
+                    "Phone command could not be completed."
+                );
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "phonecast:phone-data",
+                    { detail: event }
+                )
+            );
+
+            break;
+
+
+        case "PHONE_COMMAND_RESULT":
+
+            state.phoneData.lastCommandError = null;
+
+            window.dispatchEvent(
+                new CustomEvent(
+                    "phonecast:phone-data",
+                    { detail: event }
+                )
+            );
+
+            break;
+
+
+        // ====================================================
         // REQUEST REJECTED
         // ====================================================
 
