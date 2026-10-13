@@ -293,16 +293,16 @@ class MainActivity : FragmentActivity() {
 
         window.statusBarColor =
             AndroidColor.rgb(
-                5,
-                10,
-                15
+                11,
+                9,
+                7
             )
 
         window.navigationBarColor =
             AndroidColor.rgb(
-                5,
-                10,
-                15
+                11,
+                9,
+                7
             )
     }
 
