@@ -56,7 +56,7 @@ class PhoneCastNotificationListenerService : NotificationListenerService() {
 
             return enabledListeners
                 .split(':')
-                .mapNotNull(ComponentName::unflattenFromString)
+                .mapNotNull { component -> ComponentName.unflattenFromString(component) }
                 .any { component ->
                     component.packageName == context.packageName &&
                         component.className ==
