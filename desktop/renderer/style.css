@@ -4696,6 +4696,12 @@ body {
     color: #F4E5CF;
 }
 
+.page-shell img[src$="laptop.png"],
+.page-shell img[src$="requests.png"],
+.page-shell img[src$="phone.png"] {
+    filter: sepia(.72) saturate(.82) hue-rotate(345deg) brightness(1.10);
+}
+
 .sidebar .nav-item.active,
 .sidebar a.active {
     border-color: rgba(215, 164, 91, .50);
