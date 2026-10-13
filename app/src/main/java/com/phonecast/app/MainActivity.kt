@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.content.IntentFilter
 import android.provider.Settings
 import android.graphics.Color as AndroidColor
@@ -847,6 +848,13 @@ class MainActivity : FragmentActivity() {
                     )
                 }
 
+                "PHONE_ACTION" -> {
+
+                    handlePhoneAction(
+                        json
+                    )
+                }
+
                 else -> {
 
                     Log.w(
@@ -1011,6 +1019,115 @@ class MainActivity : FragmentActivity() {
             !PhoneCastAccessibilityService.performKey(key)
         ) {
             notifyRemoteControlUnavailable()
+        }
+    }
+
+    /**
+     * Executes a narrowly-scoped phone action from the authorized desktop
+     * session. Calls use ACTION_DIAL, which opens the system dialer with the
+     * number prefilled and leaves the final call decision to the user.
+     */
+    private fun handlePhoneAction(
+        json: JSONObject
+    ) {
+
+        if (!isAuthorizedInputRequest(json)) {
+            Log.w(TAG, "Rejected phone action without an authorized session.")
+            return
+        }
+
+        val action =
+            json.optString("action").trim().uppercase()
+
+        val targetIntent: Intent = try {
+            when (action) {
+                "OPEN_DIALER" -> {
+                    val number = json.optString("number").trim()
+                    if (number.isBlank()) {
+                        Log.w(TAG, "OPEN_DIALER ignored because the number is blank.")
+                        return
+                    }
+                    Intent(
+                        Intent.ACTION_DIAL,
+                        Uri.fromParts("tel", number, null)
+                    )
+                }
+
+                "OPEN_SETTINGS" ->
+                    Intent(Settings.ACTION_SETTINGS)
+
+                "OPEN_SETTINGS_NETWORK" ->
+                    Intent(Settings.ACTION_WIFI_SETTINGS)
+
+                "OPEN_SETTINGS_CONNECTED_DEVICES" ->
+                    Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+
+                "OPEN_SETTINGS_APPS" ->
+                    Intent(Settings.ACTION_APPLICATION_SETTINGS)
+
+                "OPEN_NOTIFICATION_ACCESS_SETTINGS" ->
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+
+                "OPEN_SETTINGS_BATTERY" ->
+                    Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
+
+                "OPEN_SETTINGS_DISPLAY" ->
+                    Intent(Settings.ACTION_DISPLAY_SETTINGS)
+
+                "OPEN_SETTINGS_SOUND" ->
+                    Intent(Settings.ACTION_SOUND_SETTINGS)
+
+                "OPEN_SETTINGS_PRIVACY" ->
+                    Intent(Settings.ACTION_PRIVACY_SETTINGS)
+
+                "OPEN_SETTINGS_LOCATION" ->
+                    Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+
+                "OPEN_SETTINGS_SECURITY" ->
+                    Intent(Settings.ACTION_SECURITY_SETTINGS)
+
+                "OPEN_SETTINGS_SYSTEM" ->
+                    Intent(Settings.ACTION_LOCALE_SETTINGS)
+
+                "OPEN_SETTINGS_ABOUT" ->
+                    Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)
+
+                else -> {
+                    Log.w(TAG, "Unknown PhoneCast phone action: $action")
+                    return
+                }
+            }
+        } catch (error: Exception) {
+            Log.e(TAG, "Could not build phone action intent: $action", error)
+            Intent(Settings.ACTION_SETTINGS)
+        }
+
+        runOnUiThread {
+            try {
+                startActivity(targetIntent)
+                Log.i(TAG, "Launched phone action: $action")
+            } catch (error: Exception) {
+                Log.e(TAG, "Phone action failed: $action", error)
+
+                if (action != "OPEN_SETTINGS") {
+                    try {
+                        startActivity(Intent(Settings.ACTION_SETTINGS))
+                    } catch (fallbackError: Exception) {
+                        Log.e(TAG, "Unable to open Android Settings fallback.", fallbackError)
+                        Toast.makeText(
+                            this,
+                            "Android could not open that screen. Open Settings on the phone.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Android could not open Settings.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
     }
 
