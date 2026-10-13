@@ -30,6 +30,15 @@ export const state = {
     activeRequestId:
         null,
 
+    phoneData: {
+        calls: [],
+        contacts: [],
+        notifications: [],
+        notificationAccessGranted: false,
+        lastCommandError: null,
+        lastReplyResult: null
+    },
+
     video: {
 
         active:
