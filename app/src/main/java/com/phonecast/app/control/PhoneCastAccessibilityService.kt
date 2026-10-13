@@ -171,6 +171,15 @@ class PhoneCastAccessibilityService : AccessibilityService() {
             activePoints.add(PointF(x, y))
         }
 
+        @Synchronized
+        fun cancelTouch(): Boolean {
+            activePointerId = null
+            activePoints.clear()
+            activeStartedAt = 0L
+            instance?.clearPendingGestures()
+            return true
+        }
+
         fun isEnabled(): Boolean = instance != null
 
         fun dispatchTap(
@@ -340,6 +349,12 @@ class PhoneCastAccessibilityService : AccessibilityService() {
         }
 
         return true
+    }
+
+    private fun clearPendingGestures() {
+        mainHandler.post {
+            pendingGestures.clear()
+        }
     }
 
     private fun enqueueGlobalAction(
