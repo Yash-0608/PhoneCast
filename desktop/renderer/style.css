@@ -187,7 +187,7 @@ img {
     background:
         radial-gradient(
             circle at 75% 50%,
-            rgba(0,168,255,.055),
+            rgba(215,164,91,.055),
             transparent 35%
         ),
 
@@ -273,7 +273,7 @@ img {
 
     box-shadow:
         0 12px 35px
-        rgba(0,168,255,.20);
+        rgba(215,164,91,.20);
 
     font-size:
         12px;
@@ -296,7 +296,7 @@ img {
 
     box-shadow:
         0 15px 40px
-        rgba(0,168,255,.32);
+        rgba(215,164,91,.32);
 }
 
 
@@ -316,7 +316,7 @@ img {
     background:
         radial-gradient(
             circle at 72% 50%,
-            rgba(0,168,255,.16),
+            rgba(215,164,91,.16),
             transparent 42%
         ),
 
@@ -406,7 +406,7 @@ img {
 
     text-shadow:
         0 0 25px
-        rgba(0,168,255,.32);
+        rgba(215,164,91,.32);
 }
 
 
@@ -455,7 +455,7 @@ img {
     filter:
         drop-shadow(
             0 0 34px
-            rgba(0,168,255,.3)
+            rgba(215,164,91,.3)
         );
 
     transform:
@@ -480,14 +480,14 @@ img {
 
     border:
         1px solid
-        rgba(25,195,255,.16);
+        rgba(240,199,133,.16);
 
     border-radius:
         50%;
 
     box-shadow:
         0 0 70px
-        rgba(0,168,255,.13);
+        rgba(215,164,91,.13);
 
     pointer-events:
         none;
@@ -572,7 +572,7 @@ img {
 
     text-shadow:
         0 0 12px
-        rgba(0,168,255,.7);
+        rgba(215,164,91,.7);
 }
 
 
@@ -614,7 +614,7 @@ img {
         48px;
 
     background:
-        rgba(0,168,255,.18);
+        rgba(215,164,91,.18);
 }
 
 
@@ -728,11 +728,11 @@ img {
         white;
 
     background:
-        rgba(0,168,255,.10);
+        rgba(215,164,91,.10);
 
     box-shadow:
         0 0 15px
-        rgba(0,168,255,.15);
+        rgba(215,164,91,.15);
 }
 
 
@@ -748,7 +748,7 @@ img {
         0 15px;
 
     background:
-        rgba(0,168,255,.16);
+        rgba(215,164,91,.16);
 }
 
 
@@ -854,14 +854,14 @@ img {
         var(--blue);
 
     background:
-        rgba(0,168,255,.07);
+        rgba(215,164,91,.07);
 
     font-size:
         25px;
 
     box-shadow:
         0 0 25px
-        rgba(0,168,255,.08);
+        rgba(215,164,91,.08);
 }
 
 
@@ -982,7 +982,7 @@ img {
 
     box-shadow:
         0 0 18px
-        rgba(0,168,255,.10);
+        rgba(215,164,91,.10);
 }
 
 
@@ -1049,7 +1049,7 @@ img {
     background:
         radial-gradient(
             circle at 70% 10%,
-            rgba(0,168,255,.045),
+            rgba(215,164,91,.045),
             transparent 35%
         ),
 
@@ -1070,7 +1070,7 @@ img {
 
     border-right:
         1px solid
-        rgba(0,168,255,.12);
+        rgba(215,164,91,.12);
 
     background:
         linear-gradient(
@@ -1121,7 +1121,7 @@ img {
     filter:
         drop-shadow(
             0 0 8px
-            rgba(0,168,255,.6)
+            rgba(215,164,91,.6)
         );
 }
 
@@ -1215,7 +1215,7 @@ img {
         white;
 
     background:
-        rgba(0,168,255,.08);
+        rgba(215,164,91,.08);
 }
 
 
@@ -1223,7 +1223,7 @@ img {
 
     border:
         1px solid
-        rgba(0,168,255,.18);
+        rgba(215,164,91,.18);
 
     box-shadow:
         inset 3px 0
@@ -1311,12 +1311,12 @@ img {
     background-image:
         linear-gradient(
             90deg,
-            rgba(0,168,255,.025) 1px,
+            rgba(215,164,91,.025) 1px,
             transparent 1px
         ),
         linear-gradient(
             0deg,
-            rgba(0,168,255,.018) 1px,
+            rgba(215,164,91,.018) 1px,
             transparent 1px
         );
 
@@ -1402,7 +1402,7 @@ img {
 
     border:
         1px solid
-        rgba(0,168,255,.12);
+        rgba(215,164,91,.12);
 
     border-radius:
         16px;
@@ -1410,7 +1410,7 @@ img {
     background:
         linear-gradient(
             100deg,
-            rgba(0,168,255,.04),
+            rgba(215,164,91,.04),
             rgba(0,10,20,.14)
         );
 }
@@ -1433,7 +1433,7 @@ img {
     filter:
         drop-shadow(
             0 0 16px
-            rgba(0,168,255,.35)
+            rgba(215,164,91,.35)
         );
 }
 
@@ -1557,7 +1557,7 @@ img {
 
     border:
         1px solid
-        rgba(0,168,255,.14);
+        rgba(215,164,91,.14);
 
     border-radius:
         18px;
@@ -1624,7 +1624,7 @@ img {
         var(--blue);
 
     background:
-        rgba(0,168,255,.05);
+        rgba(215,164,91,.05);
 
     font-size:
         17px;
@@ -1719,10 +1719,10 @@ img {
 .device-card.selected {
 
     border-color:
-        rgba(0,168,255,.48);
+        rgba(215,164,91,.48);
 
     background:
-        rgba(0,168,255,.06);
+        rgba(215,164,91,.06);
 }
 
 
@@ -1744,7 +1744,7 @@ img {
         11px;
 
     background:
-        rgba(0,168,255,.06);
+        rgba(215,164,91,.06);
 }
 
 
@@ -2002,7 +2002,7 @@ img {
         10px;
 
     background:
-        rgba(0,168,255,.05);
+        rgba(215,164,91,.05);
 }
 
 
@@ -2194,7 +2194,7 @@ img {
         var(--blue);
 
     background:
-        rgba(0,168,255,.06);
+        rgba(215,164,91,.06);
 
     font-size:
         19px;
@@ -2288,7 +2288,7 @@ img {
 
     border-bottom:
         1px solid
-        rgba(0,168,255,.15);
+        rgba(215,164,91,.15);
 
     background:
         rgba(4,12,20,.95);
@@ -2431,7 +2431,7 @@ img {
         var(--text);
 
     background:
-        rgba(0,168,255,.05);
+        rgba(215,164,91,.05);
 
     font-size:
         9px;
@@ -2450,7 +2450,7 @@ img {
         var(--border-strong);
 
     background:
-        rgba(0,168,255,.10);
+        rgba(215,164,91,.10);
 }
 
 
@@ -2464,7 +2464,7 @@ img {
         var(--blue-2);
 
     background:
-        rgba(0,168,255,.14);
+        rgba(215,164,91,.14);
 }
 
 
@@ -2536,7 +2536,7 @@ img {
 
     border:
         1px solid
-        rgba(0,168,255,.15);
+        rgba(215,164,91,.15);
 
     border-radius:
         16px;
@@ -2577,7 +2577,7 @@ img {
 
     box-shadow:
         0 0 35px
-        rgba(0,168,255,.08);
+        rgba(215,164,91,.08);
 }
 
 
@@ -2710,7 +2710,7 @@ img {
 
     border:
         2px solid
-        rgba(0,168,255,.14);
+        rgba(215,164,91,.14);
 
     border-top-color:
         var(--blue);
@@ -2816,7 +2816,7 @@ img {
 
     border:
         1px solid
-        rgba(0,168,255,.12);
+        rgba(215,164,91,.12);
 
     border-radius:
         12px;
@@ -2907,7 +2907,7 @@ img {
         var(--text);
 
     background:
-        rgba(0,168,255,.04);
+        rgba(215,164,91,.04);
 
     font-size:
         9px;
@@ -2929,10 +2929,10 @@ img {
         #ffffff;
 
     background:
-        rgba(0,168,255,.18);
+        rgba(215,164,91,.18);
 
     box-shadow:
-        inset 0 0 0 1px rgba(0,168,255,.10);
+        inset 0 0 0 1px rgba(215,164,91,.10);
 }
 
 
@@ -2973,7 +2973,7 @@ img {
         var(--text);
 
     background:
-        rgba(0,168,255,.055);
+        rgba(215,164,91,.055);
 
     font-size:
         8px;
@@ -2995,7 +2995,7 @@ img {
         #ffffff;
 
     background:
-        rgba(0,168,255,.14);
+        rgba(215,164,91,.14);
 }
 
 
@@ -3154,10 +3154,10 @@ img {
     --pc-panel-raised: #0b1c2a;
     --pc-panel-soft: #0d2130;
     --pc-line: rgba(67, 171, 225, .19);
-    --pc-line-strong: rgba(0, 168, 255, .52);
+    --pc-line-strong: rgba(215, 164, 91, .52);
     --pc-muted: #8ea6b8;
     --pc-blue: #D7A45B;
-    --pc-blue-soft: rgba(0, 168, 255, .12);
+    --pc-blue-soft: rgba(215, 164, 91, .12);
 }
 
 .phonecast-control-centre .casting-header {
@@ -3250,7 +3250,7 @@ img {
 
 .workspace-eyebrow {
     display: block;
-    color: #53bfff;
+    color: #E8B977;
     font-size: 9px;
     font-weight: 800;
     letter-spacing: 1.25px;
@@ -3313,7 +3313,7 @@ img {
     border: 1px solid var(--pc-line);
     border-radius: 7px;
     color: #b5c9d8;
-    background: rgba(0, 168, 255, .045);
+    background: rgba(215, 164, 91, .045);
     font-size: 8px;
     font-weight: 800;
     letter-spacing: .25px;
@@ -3328,15 +3328,15 @@ img {
 .phonecast-control-centre .preview-mode-switch button[aria-pressed="true"] {
     border-color: var(--pc-line-strong);
     color: #eef9ff;
-    background: rgba(0, 168, 255, .17);
-    box-shadow: inset 0 0 0 1px rgba(0, 168, 255, .08);
+    background: rgba(215, 164, 91, .17);
+    box-shadow: inset 0 0 0 1px rgba(215, 164, 91, .08);
 }
 
 .phonecast-control-centre .preview-mode-switch button:hover,
 .phonecast-control-centre .remote-navigation-controls button:hover {
     border-color: var(--pc-line-strong);
     color: #ffffff;
-    background: rgba(0, 168, 255, .12);
+    background: rgba(215, 164, 91, .12);
 }
 
 .preview-device-details {
@@ -3413,7 +3413,7 @@ img {
 }
 
 .phonecast-module-tab > span {
-    color: #58c4ff;
+    color: #E8B977;
     font-size: 18px;
     line-height: 1;
 }
@@ -3428,14 +3428,14 @@ img {
 
 .phonecast-module-tab:hover {
     color: #ffffff;
-    background: rgba(0, 168, 255, .07);
+    background: rgba(215, 164, 91, .07);
 }
 
 .phonecast-module-tab.active {
-    border-color: rgba(0, 168, 255, .48);
+    border-color: rgba(215, 164, 91, .48);
     color: #ffffff;
-    background: linear-gradient(135deg, rgba(0, 151, 255, .24), rgba(0, 168, 255, .09));
-    box-shadow: 0 0 16px rgba(0, 168, 255, .08), inset 0 0 0 1px rgba(0, 168, 255, .06);
+    background: linear-gradient(135deg, rgba(193, 130, 59, .24), rgba(215, 164, 91, .09));
+    box-shadow: 0 0 16px rgba(215, 164, 91, .08), inset 0 0 0 1px rgba(215, 164, 91, .06);
 }
 
 .phonecast-workspace-content {
@@ -3490,7 +3490,7 @@ img {
     border: 1px solid var(--pc-line);
     border-radius: 12px;
     color: #65caff;
-    background: rgba(0, 168, 255, .07);
+    background: rgba(215, 164, 91, .07);
     font-size: 22px;
 }
 
@@ -3507,7 +3507,7 @@ img {
 }
 
 .settings-icon {
-    color: #58c4ff;
+    color: #E8B977;
 }
 
 .workspace-view-body {
@@ -3604,8 +3604,8 @@ img {
 }
 
 .workspace-input:focus {
-    border-color: rgba(0, 168, 255, .65);
-    box-shadow: 0 0 0 3px rgba(0, 168, 255, .09);
+    border-color: rgba(215, 164, 91, .65);
+    box-shadow: 0 0 0 3px rgba(215, 164, 91, .09);
 }
 
 .workspace-input:disabled {
@@ -3658,7 +3658,7 @@ img {
 
 .dialpad-key:hover {
     border-color: var(--pc-line-strong);
-    background: rgba(0, 168, 255, .12);
+    background: rgba(215, 164, 91, .12);
 }
 
 .dialpad-key:active {
@@ -3683,7 +3683,7 @@ img {
     border: 1px solid var(--pc-line);
     border-radius: 8px;
     color: #d9edf9;
-    background: rgba(0, 168, 255, .06);
+    background: rgba(215, 164, 91, .06);
     font-size: 9px;
     font-weight: 800;
     letter-spacing: .3px;
@@ -3691,7 +3691,7 @@ img {
 }
 
 .workspace-primary-button {
-    border-color: rgba(0, 168, 255, .62);
+    border-color: rgba(215, 164, 91, .62);
     color: #ffffff;
     background: linear-gradient(100deg, #078ce8, #04b0f0);
     box-shadow: 0 5px 15px rgba(0, 137, 232, .12);
@@ -3710,7 +3710,7 @@ img {
 
 .workspace-secondary-button:hover:not(:disabled) {
     border-color: var(--pc-line-strong);
-    background: rgba(0, 168, 255, .12);
+    background: rgba(215, 164, 91, .12);
 }
 
 .workspace-inline-status {
@@ -3746,10 +3746,10 @@ img {
     place-items: center;
     width: 48px;
     height: 48px;
-    border: 1px solid rgba(0, 168, 255, .22);
+    border: 1px solid rgba(215, 164, 91, .22);
     border-radius: 14px;
     color: #4dbfff;
-    background: rgba(0, 168, 255, .07);
+    background: rgba(215, 164, 91, .07);
     font-size: 23px;
 }
 
@@ -3820,7 +3820,7 @@ img {
     border: 1px solid var(--pc-line);
     border-radius: 7px;
     color: #a0b6c6;
-    background: rgba(0, 168, 255, .035);
+    background: rgba(215, 164, 91, .035);
     font-size: 8px;
     font-weight: 800;
     letter-spacing: .25px;
@@ -3830,7 +3830,7 @@ img {
 .message-filter-chip.active {
     border-color: var(--pc-line-strong);
     color: #ffffff;
-    background: rgba(0, 168, 255, .17);
+    background: rgba(215, 164, 91, .17);
 }
 
 .messages-layout {
@@ -3898,8 +3898,8 @@ img {
     border: 1px solid rgba(119, 141, 255, .6);
     border-radius: 30px;
     color: #c8bdff;
-    background: radial-gradient(circle at 34% 26%, rgba(0, 168, 255, .27), rgba(108, 79, 255, .10) 52%, rgba(7, 15, 31, .96));
-    box-shadow: 0 0 32px rgba(86, 111, 255, .16), inset 0 0 25px rgba(0, 168, 255, .09);
+    background: radial-gradient(circle at 34% 26%, rgba(215, 164, 91, .27), rgba(154, 110, 61, .10) 52%, rgba(20, 14, 10, .96));
+    box-shadow: 0 0 32px rgba(194, 134, 64, .16), inset 0 0 25px rgba(215, 164, 91, .09);
     font-size: 35px;
 }
 
@@ -3996,7 +3996,7 @@ img {
 
 .settings-category-card:hover {
     border-color: var(--pc-line-strong);
-    background: rgba(0, 168, 255, .08);
+    background: rgba(215, 164, 91, .08);
 }
 
 .settings-category-icon {
@@ -4006,7 +4006,7 @@ img {
     height: 32px;
     border-radius: 9px;
     color: #51c1ff;
-    background: rgba(0, 168, 255, .08);
+    background: rgba(215, 164, 91, .08);
     font-size: 17px;
 }
 
@@ -4214,11 +4214,11 @@ img {
 }
 
 .phonecast-notification-row:hover {
-    background: rgba(0, 168, 255, .055);
+    background: rgba(215, 164, 91, .055);
 }
 
 .phonecast-notification-row.active {
-    background: linear-gradient(90deg, rgba(0, 168, 255, .15), rgba(0, 168, 255, .025));
+    background: linear-gradient(90deg, rgba(215, 164, 91, .15), rgba(215, 164, 91, .025));
     box-shadow: inset 2px 0 0 #D7A45B;
 }
 
@@ -4227,10 +4227,10 @@ img {
     place-items: center;
     width: 34px;
     height: 34px;
-    border: 1px solid rgba(0, 168, 255, .25);
+    border: 1px solid rgba(215, 164, 91, .25);
     border-radius: 11px;
     color: #eaf7ff;
-    background: linear-gradient(145deg, rgba(0, 168, 255, .23), rgba(0, 168, 255, .055));
+    background: linear-gradient(145deg, rgba(215, 164, 91, .23), rgba(215, 164, 91, .055));
     font-size: 13px;
     font-weight: 800;
 }
@@ -4286,7 +4286,7 @@ img {
 }
 
 .notification-row-copy small {
-    color: #5dbbff;
+    color: #D9AC6F;
     font-size: 7px;
     font-weight: 800;
     letter-spacing: .6px;
@@ -4640,4 +4640,27 @@ body {
     .phonecast-control-centre .settings-category-card {
         transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
     }
+}
+
+
+.phonecast-glyph {
+    display: block;
+    flex: 0 0 auto;
+    overflow: visible;
+}
+
+.phonecast-module-tab > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.workspace-header-icon .phonecast-glyph {
+    width: 24px;
+    height: 24px;
+}
+
+.settings-category-icon .phonecast-glyph {
+    width: 18px;
+    height: 18px;
 }
