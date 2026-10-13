@@ -44,7 +44,7 @@ function getLanInterfacesForDiagnostics() {
             const isPrivateLan =
                 entry.address.startsWith("10.") ||
                 entry.address.startsWith("192.168.") ||
-                /^172\\.(1[6-9]|2\\d|3[01])\\./.test(entry.address);
+                /^172\.(1[6-9]|2\d|3[01])\./.test(entry.address);
 
             if (isPrivateLan) {
                 candidates.push({
