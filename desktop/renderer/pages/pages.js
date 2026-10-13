@@ -2638,22 +2638,6 @@ function setupRemoteInput() {
         canvas.style.cursor = "default";
     };
 
-    const resetLocalPointer = () => {
-        pointerActive = false;
-        activePointerId = null;
-        dragStartPoint = null;
-        lastPointerPoint = null;
-        dragStartedAt = 0;
-
-        try {
-            if (activePointerId !== null) {
-                canvas.releasePointerCapture?.(activePointerId);
-            }
-        } catch (_) {
-            // The browser may already have released capture.
-        }
-    };
-
     touchModeButton?.addEventListener("click", () => setInputMode("touch"));
     pointerModeButton?.addEventListener("click", () => setInputMode("pointer"));
     setInputMode("touch");
