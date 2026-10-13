@@ -1,10 +1,15 @@
 package com.phonecast.app
 
+import android.Manifest
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.CallLog
+import android.provider.ContactsContract
 import android.provider.Settings
 import android.graphics.Color as AndroidColor
 import android.media.projection.MediaProjectionManager
@@ -42,6 +47,32 @@ class MainActivity : FragmentActivity() {
         private const val DEFAULT_CAPTURE_WIDTH = 1080
         private const val DEFAULT_CAPTURE_HEIGHT = 2400
         private const val DEFAULT_CAPTURE_DENSITY = 420
+
+        @Volatile
+        private var currentInstance: MainActivity? = null
+
+        /**
+         * NotificationListenerService may call this from a binder thread.
+         * Forward notification events only to a currently authenticated
+         * PhoneCast session; never broadcast them to arbitrary LAN clients.
+         */
+        fun sendNotificationEventToLaptop(event: JSONObject) {
+            val activity = currentInstance ?: return
+            val requestId = activity.activeRequestId ?: return
+
+            if (
+                !activity.authenticated ||
+                activity.activeSocket?.isClosed != false
+            ) {
+                return
+            }
+
+            val payload = JSONObject(event.toString()).apply {
+                put("requestId", requestId)
+            }
+
+            activity.sendJsonToActiveLaptop(payload)
+        }
     }
 
     private lateinit var database: PhoneCastDatabase
@@ -107,6 +138,52 @@ class MainActivity : FragmentActivity() {
      * owner is being asked to enable accessibility in Android Settings.
      */
     private var accessibilityPromptVisible = false
+
+    /*
+     * Phone data is requested only by an authenticated desktop session.
+     * READ_CONTACTS and READ_CALL_LOG are requested just-in-time.
+     */
+    private var pendingPhoneDataPermission: Pair<String, String>? = null
+
+    private val phoneDataExecutor =
+        Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "PhoneCast-PhoneData").apply {
+                isDaemon = true
+            }
+        }
+
+    private val phoneDataPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+
+            val pending = pendingPhoneDataPermission
+            pendingPhoneDataPermission = null
+
+            if (pending == null) {
+                return@registerForActivityResult
+            }
+
+            val (operation, requestId) = pending
+
+            if (
+                activeRequestId != requestId ||
+                !authenticated ||
+                activeSocket?.isClosed != false
+            ) {
+                return@registerForActivityResult
+            }
+
+            if (!granted) {
+                sendPhoneDataEvent(
+                    type = "PHONE_DATA_PERMISSION_DENIED",
+                    requestId = requestId,
+                    extra = JSONObject().put("capability", operation)
+                )
+            } else {
+                executePhoneDataQuery(operation, requestId)
+            }
+        }
 
     // =========================================================
     // SCREEN CAPTURE STATE
@@ -185,6 +262,8 @@ class MainActivity : FragmentActivity() {
     ) {
 
         super.onCreate(savedInstanceState)
+
+        currentInstance = this
 
         configureSystemBars()
 
@@ -847,6 +926,34 @@ class MainActivity : FragmentActivity() {
                     )
                 }
 
+                "OPEN_PHONE_SETTINGS" -> {
+                    handleOpenPhoneSettings(json)
+                }
+
+                "OPEN_NOTIFICATION_ACCESS_SETTINGS" -> {
+                    handleOpenNotificationAccessSettings(json)
+                }
+
+                "OPEN_PHONE_DIALER" -> {
+                    handleOpenPhoneDialer(json)
+                }
+
+                "GET_RECENT_CALLS" -> {
+                    handlePhoneDataRequest(json, "GET_RECENT_CALLS")
+                }
+
+                "GET_CONTACTS" -> {
+                    handlePhoneDataRequest(json, "GET_CONTACTS")
+                }
+
+                "GET_NOTIFICATIONS" -> {
+                    handleGetNotifications(json)
+                }
+
+                "REPLY_NOTIFICATION" -> {
+                    handleReplyNotification(json)
+                }
+
                 else -> {
 
                     Log.w(
@@ -1012,6 +1119,424 @@ class MainActivity : FragmentActivity() {
         ) {
             notifyRemoteControlUnavailable()
         }
+    }
+
+    private fun handleOpenPhoneSettings(json: JSONObject) {
+
+        if (!isAuthorizedInputRequest(json)) {
+            return
+        }
+
+        runOnUiThread {
+            try {
+                startActivity(Intent(Settings.ACTION_SETTINGS))
+                sendPhoneDataEvent(
+                    type = "PHONE_COMMAND_RESULT",
+                    requestId = json.optString("requestId"),
+                    extra = JSONObject()
+                        .put("command", "OPEN_PHONE_SETTINGS")
+                        .put("success", true)
+                )
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to open Android Settings.", error)
+                sendPhoneCommandError(
+                    json.optString("requestId"),
+                    "OPEN_PHONE_SETTINGS",
+                    "Unable to open Android Settings."
+                )
+            }
+        }
+    }
+
+    private fun handleOpenNotificationAccessSettings(json: JSONObject) {
+
+        if (!isAuthorizedInputRequest(json)) {
+            return
+        }
+
+        runOnUiThread {
+            try {
+                startActivity(
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                )
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to open notification-access settings.", error)
+                sendPhoneCommandError(
+                    json.optString("requestId"),
+                    "OPEN_NOTIFICATION_ACCESS_SETTINGS",
+                    "Unable to open notification access settings."
+                )
+            }
+        }
+    }
+
+    private fun handleOpenPhoneDialer(json: JSONObject) {
+
+        if (!isAuthorizedInputRequest(json)) {
+            return
+        }
+
+        val rawNumber = json.optString("number").trim()
+        val number = rawNumber.filter { character ->
+            character.isDigit() || character in "+*#(),; -"
+        }.take(40)
+
+        if (number.isBlank()) {
+            sendPhoneCommandError(
+                json.optString("requestId"),
+                "OPEN_PHONE_DIALER",
+                "Enter a phone number first."
+            )
+            return
+        }
+
+        runOnUiThread {
+            try {
+                startActivity(
+                    Intent(
+                        Intent.ACTION_DIAL,
+                        Uri.fromParts("tel", number, null)
+                    )
+                )
+
+                sendPhoneDataEvent(
+                    type = "PHONE_COMMAND_RESULT",
+                    requestId = json.optString("requestId"),
+                    extra = JSONObject()
+                        .put("command", "OPEN_PHONE_DIALER")
+                        .put("success", true)
+                )
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to open the phone dialer.", error)
+                sendPhoneCommandError(
+                    json.optString("requestId"),
+                    "OPEN_PHONE_DIALER",
+                    "Unable to open the phone dialer."
+                )
+            }
+        }
+    }
+
+    private fun handlePhoneDataRequest(
+        json: JSONObject,
+        operation: String
+    ) {
+
+        if (!isAuthorizedInputRequest(json)) {
+            return
+        }
+
+        val requestId = json.optString("requestId")
+        val permission = when (operation) {
+            "GET_CONTACTS" -> Manifest.permission.READ_CONTACTS
+            "GET_RECENT_CALLS" -> Manifest.permission.READ_CALL_LOG
+            else -> return
+        }
+
+        if (
+            ContextCompat.checkSelfPermission(
+                this,
+                permission
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            executePhoneDataQuery(operation, requestId)
+            return
+        }
+
+        runOnUiThread {
+
+            if (
+                activeRequestId != requestId ||
+                !authenticated ||
+                activeSocket?.isClosed != false
+            ) {
+                return@runOnUiThread
+            }
+
+            if (pendingPhoneDataPermission != null) {
+                sendPhoneCommandError(
+                    requestId,
+                    operation,
+                    "Another phone-data permission request is already pending."
+                )
+                return@runOnUiThread
+            }
+
+            pendingPhoneDataPermission =
+                operation to requestId
+
+            phoneDataPermissionLauncher.launch(permission)
+        }
+    }
+
+    private fun executePhoneDataQuery(
+        operation: String,
+        requestId: String
+    ) {
+
+        phoneDataExecutor.execute {
+
+            if (
+                activeRequestId != requestId ||
+                !authenticated ||
+                activeSocket?.isClosed != false
+            ) {
+                return@execute
+            }
+
+            try {
+
+                when (operation) {
+                    "GET_RECENT_CALLS" -> sendRecentCalls(requestId)
+                    "GET_CONTACTS" -> sendPhoneContacts(requestId)
+                }
+
+            } catch (error: SecurityException) {
+
+                Log.w(TAG, "$operation was denied by Android.", error)
+
+                sendPhoneDataEvent(
+                    type = "PHONE_DATA_PERMISSION_DENIED",
+                    requestId = requestId,
+                    extra = JSONObject()
+                        .put("capability", operation)
+                        .put("message", "Android denied access to this phone data.")
+                )
+
+            } catch (error: Exception) {
+
+                Log.e(TAG, "Phone data query failed: $operation", error)
+
+                sendPhoneCommandError(
+                    requestId,
+                    operation,
+                    error.message ?: "Phone data query failed."
+                )
+            }
+        }
+    }
+
+    private fun sendRecentCalls(requestId: String) {
+
+        val calls = org.json.JSONArray()
+
+        contentResolver.query(
+            CallLog.Calls.CONTENT_URI,
+            arrayOf(
+                CallLog.Calls._ID,
+                CallLog.Calls.NUMBER,
+                CallLog.Calls.CACHED_NAME,
+                CallLog.Calls.DATE,
+                CallLog.Calls.TYPE,
+                CallLog.Calls.DURATION
+            ),
+            null,
+            null,
+            "${CallLog.Calls.DATE} DESC"
+        )?.use { cursor ->
+
+            val idIndex = cursor.getColumnIndexOrThrow(CallLog.Calls._ID)
+            val numberIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.NUMBER)
+            val nameIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.CACHED_NAME)
+            val dateIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DATE)
+            val typeIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.TYPE)
+            val durationIndex = cursor.getColumnIndexOrThrow(CallLog.Calls.DURATION)
+
+            while (cursor.moveToNext() && calls.length() < 50) {
+
+                val typeCode = cursor.getInt(typeIndex)
+                val type = when (typeCode) {
+                    CallLog.Calls.INCOMING_TYPE -> "INCOMING"
+                    CallLog.Calls.OUTGOING_TYPE -> "OUTGOING"
+                    CallLog.Calls.MISSED_TYPE -> "MISSED"
+                    CallLog.Calls.REJECTED_TYPE -> "REJECTED"
+                    CallLog.Calls.BLOCKED_TYPE -> "BLOCKED"
+                    else -> "OTHER"
+                }
+
+                calls.put(
+                    JSONObject().apply {
+                        put("id", cursor.getLong(idIndex).toString())
+                        put("number", cursor.getString(numberIndex).orEmpty())
+                        put("name", cursor.getString(nameIndex).orEmpty())
+                        put("timestamp", cursor.getLong(dateIndex))
+                        put("type", type)
+                        put("durationSeconds", cursor.getLong(durationIndex))
+                    }
+                )
+            }
+        }
+
+        sendPhoneDataEvent(
+            type = "CALL_LOG_RESULT",
+            requestId = requestId,
+            extra = JSONObject()
+                .put("success", true)
+                .put("calls", calls)
+        )
+    }
+
+    private fun sendPhoneContacts(requestId: String) {
+
+        val contacts = org.json.JSONArray()
+        val seenNumbers = LinkedHashSet<String>()
+
+        contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+            ),
+            null,
+            null,
+            "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} COLLATE NOCASE ASC"
+        )?.use { cursor ->
+
+            val idIndex = cursor.getColumnIndexOrThrow(
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID
+            )
+            val nameIndex = cursor.getColumnIndexOrThrow(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME
+            )
+            val numberIndex = cursor.getColumnIndexOrThrow(
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+            )
+
+            while (cursor.moveToNext() && contacts.length() < 500) {
+
+                val number = cursor.getString(numberIndex).orEmpty().trim()
+                if (number.isBlank() || !seenNumbers.add(number)) {
+                    continue
+                }
+
+                contacts.put(
+                    JSONObject().apply {
+                        put("id", cursor.getLong(idIndex).toString())
+                        put("name", cursor.getString(nameIndex).orEmpty())
+                        put("number", number)
+                    }
+                )
+            }
+        }
+
+        sendPhoneDataEvent(
+            type = "CONTACTS_RESULT",
+            requestId = requestId,
+            extra = JSONObject()
+                .put("success", true)
+                .put("contacts", contacts)
+        )
+    }
+
+    private fun handleGetNotifications(json: JSONObject) {
+
+        if (!isAuthorizedInputRequest(json)) {
+            return
+        }
+
+        val requestId = json.optString("requestId")
+
+        if (!PhoneCastNotificationListenerService.isAccessGranted(this)) {
+            sendPhoneDataEvent(
+                type = "NOTIFICATION_ACCESS_REQUIRED",
+                requestId = requestId
+            )
+            return
+        }
+
+        val notifications =
+            PhoneCastNotificationListenerService.snapshot()
+
+        if (notifications == null) {
+            sendPhoneDataEvent(
+                type = "PHONE_COMMAND_ERROR",
+                requestId = requestId,
+                extra = JSONObject()
+                    .put("command", "GET_NOTIFICATIONS")
+                    .put("message", "Android notification service is not connected yet.")
+            )
+            return
+        }
+
+        sendPhoneDataEvent(
+            type = "NOTIFICATION_SNAPSHOT",
+            requestId = requestId,
+            extra = JSONObject()
+                .put("success", true)
+                .put("notifications", notifications)
+        )
+    }
+
+    private fun handleReplyNotification(json: JSONObject) {
+
+        if (!isAuthorizedInputRequest(json)) {
+            return
+        }
+
+        val requestId = json.optString("requestId")
+        val notificationKey = json.optString("notificationKey")
+        val replyText = json.optString("text")
+        val actionIndex = json.optInt("actionIndex", -1)
+
+        val sent =
+            notificationKey.isNotBlank() &&
+                actionIndex >= 0 &&
+                replyText.isNotBlank() &&
+                PhoneCastNotificationListenerService.reply(
+                    notificationKey,
+                    actionIndex,
+                    replyText
+                )
+
+        sendPhoneDataEvent(
+            type = "NOTIFICATION_REPLY_RESULT",
+            requestId = requestId,
+            extra = JSONObject()
+                .put("success", sent)
+                .put("notificationKey", notificationKey)
+                .put(
+                    "message",
+                    if (sent) "Reply handed to the app notification action."
+                    else "This notification no longer supports a reply."
+                )
+        )
+    }
+
+    private fun sendPhoneCommandError(
+        requestId: String,
+        command: String,
+        message: String
+    ) {
+        sendPhoneDataEvent(
+            type = "PHONE_COMMAND_ERROR",
+            requestId = requestId,
+            extra = JSONObject()
+                .put("command", command)
+                .put("message", message)
+        )
+    }
+
+    private fun sendPhoneDataEvent(
+        type: String,
+        requestId: String,
+        extra: JSONObject = JSONObject()
+    ) {
+
+        if (
+            requestId != activeRequestId ||
+            !authenticated ||
+            activeSocket?.isClosed != false
+        ) {
+            return
+        }
+
+        val event = JSONObject(extra.toString()).apply {
+            put("type", type)
+            put("requestId", requestId)
+        }
+
+        sendJsonToActiveLaptop(event)
     }
 
     private fun notifyRemoteControlUnavailable() {
@@ -2628,6 +3153,11 @@ class MainActivity : FragmentActivity() {
 
     override fun onDestroy() {
 
+        if (currentInstance === this) {
+            currentInstance = null
+        }
+
+        phoneDataExecutor.shutdownNow()
         activityDestroyed.set(true)
 
         /*
