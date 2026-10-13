@@ -2787,7 +2787,14 @@ ipcMain.handle(
                 "INPUT_TOUCH",
                 "INPUT_SCROLL",
                 "INPUT_TEXT",
-                "INPUT_KEY"
+                "INPUT_KEY",
+                "OPEN_PHONE_SETTINGS",
+                "OPEN_NOTIFICATION_ACCESS_SETTINGS",
+                "OPEN_PHONE_DIALER",
+                "GET_RECENT_CALLS",
+                "GET_CONTACTS",
+                "GET_NOTIFICATIONS",
+                "REPLY_NOTIFICATION"
             ].includes(message.type)
         ) {
 
