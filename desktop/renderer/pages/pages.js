@@ -2123,395 +2123,395 @@ function setupSidebarNavigation() {
 // CASTING PAGE
 // ============================================================
 
-export function showCastingPage() {
 
+let activePhonecastWorkspace = "calls";
+let activePhonecastCallView = "dialpad";
+let phonecastDialNumber = "";
+let phonecastWorkspaceNotice = "";
+let phonecastSettingsQuery = "";
+
+const PHONECAST_SETTINGS_ITEMS = [
+    { icon: "⌁", title: "Network & internet", detail: "Wi-Fi, mobile network, hotspot", action: "OPEN_SETTINGS_NETWORK" },
+    { icon: "▣", title: "Connected devices", detail: "Bluetooth, pairing and USB", action: "OPEN_SETTINGS_CONNECTED_DEVICES" },
+    { icon: "▦", title: "Apps", detail: "Installed apps and permissions", action: "OPEN_SETTINGS_APPS" },
+    { icon: "♧", title: "Notifications", detail: "Notification access and alerts", action: "OPEN_NOTIFICATION_ACCESS_SETTINGS" },
+    { icon: "▤", title: "Battery", detail: "Battery use and power settings", action: "OPEN_SETTINGS_BATTERY" },
+    { icon: "☼", title: "Display", detail: "Brightness, refresh rate and theme", action: "OPEN_SETTINGS_DISPLAY" },
+    { icon: "◖", title: "Sound & vibration", detail: "Volume, ringtones and vibration", action: "OPEN_SETTINGS_SOUND" },
+    { icon: "◈", title: "Privacy", detail: "Permissions and privacy controls", action: "OPEN_SETTINGS_PRIVACY" },
+    { icon: "⌖", title: "Location", detail: "Location services and access", action: "OPEN_SETTINGS_LOCATION" },
+    { icon: "▣", title: "Security", detail: "Screen lock and device security", action: "OPEN_SETTINGS_SECURITY" },
+    { icon: "＋", title: "System", detail: "Language, keyboard and updates", action: "OPEN_SETTINGS_SYSTEM" },
+    { icon: "ⓘ", title: "About phone", detail: "Device model and software information", action: "OPEN_SETTINGS_ABOUT" }
+];
+
+function renderPhonecastCallsWorkspace() {
+    var tabs = [
+        { id: "dialpad", label: "DIAL PAD" },
+        { id: "recent", label: "RECENT CALLS" },
+        { id: "contacts", label: "CONTACTS" }
+    ];
+
+    var tabsHtml = tabs.map(function (tab) {
+        var selected = activePhonecastCallView === tab.id;
+        return "<button type='button' class='workspace-subtab" +
+            (selected ? " active" : "") +
+            "' data-phonecast-call-view='" + tab.id +
+            "' aria-pressed='" + String(selected) + "'>" +
+            tab.label + "</button>";
+    }).join("");
+
+    var callContent = "";
+
+    if (activePhonecastCallView === "dialpad") {
+        var sanitizedNumber = phonecastDialNumber.replace(/[^0-9+*#(), -]/g, "");
+        var digits = [
+            ["1", ""], ["2", "ABC"], ["3", "DEF"],
+            ["4", "GHI"], ["5", "JKL"], ["6", "MNO"],
+            ["7", "PQRS"], ["8", "TUV"], ["9", "WXYZ"],
+            ["*", ""], ["0", "+"], ["#", ""]
+        ];
+
+        var digitButtons = digits.map(function (item) {
+            return "<button type='button' class='dialpad-key' data-dial-digit='" +
+                item[0] + "'><strong>" + item[0] + "</strong>" +
+                (item[1] ? "<span>" + item[1] + "</span>" : "") +
+                "</button>";
+        }).join("");
+
+        callContent = [
+            "<div class='calls-layout'>",
+            "<section class='workspace-card dialer-card'>",
+            "<div class='workspace-card-heading'><div><span class='workspace-eyebrow'>PHONE</span><h3>Dial a number</h3></div><span class='integration-pill pending'>PHONE LINK</span></div>",
+            "<label class='dial-number-label' for='phonecastDialNumber'>Phone number</label>",
+            "<input id='phonecastDialNumber' class='workspace-input dial-number-input' type='tel' inputmode='tel' autocomplete='off' placeholder='Enter a phone number' value='" + escapeHtml(sanitizedNumber) + "' aria-label='Phone number to dial'>",
+            "<div class='phonecast-dialpad' role='group' aria-label='Dial pad'>" + digitButtons + "</div>",
+            "<div class='dialer-actions'>",
+            "<button type='button' class='workspace-secondary-button' data-dial-action='clear'>CLEAR</button>",
+            "<button type='button' class='workspace-secondary-button' data-dial-action='backspace' aria-label='Delete last digit'>⌫</button>",
+            "<button type='button' class='workspace-primary-button call-action-button' data-dial-action='call'><span aria-hidden='true'>☎</span> CALL</button>",
+            "</div>",
+            "<p class='workspace-inline-status " + (phonecastWorkspaceNotice ? "" : "hidden") + "' id='phonecastCallNotice' role='status'>" + escapeHtml(phonecastWorkspaceNotice) + "</p>",
+            "</section>",
+            "<section class='workspace-card call-side-card'><div class='workspace-card-heading'><div><span class='workspace-eyebrow'>CALLING</span><h3>From PhoneCast</h3></div></div>",
+            "<div class='workspace-empty-state compact-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>☎</div><strong>Calls use your connected phone</strong><p>Dialer launching is the first calling integration. Call history, saved contacts and in-call audio controls will be connected in subsequent steps.</p></div>",
+            "<div class='workspace-feature-row'><span class='feature-status-dot'></span><span>Calls use your phone's SIM and carrier.</span></div></section></div>"
+        ].join("");
+    } else if (activePhonecastCallView === "recent") {
+        callContent = [
+            "<section class='workspace-card workspace-full-card'>",
+            "<div class='workspace-card-heading'><div><span class='workspace-eyebrow'>CALL ACTIVITY</span><h3>Recent calls</h3></div><span class='integration-pill pending'>INTEGRATION REQUIRED</span></div>",
+            "<div class='workspace-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>◷</div><strong>Call history hasn't synced yet</strong><p>PhoneCast needs Android call-log access before it can show real recent calls here. No sample history is being presented as real data.</p></div>",
+            "</section>"
+        ].join("");
+    } else {
+        callContent = [
+            "<section class='workspace-card workspace-full-card'>",
+            "<div class='workspace-card-heading'><div><span class='workspace-eyebrow'>PEOPLE</span><h3>Phone contacts</h3></div><span class='integration-pill pending'>INTEGRATION REQUIRED</span></div>",
+            "<input id='phonecastContactSearch' class='workspace-input' type='search' placeholder='Search saved phone contacts...' autocomplete='off'>",
+            "<div class='workspace-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>♙</div><strong>Contact directory isn't connected yet</strong><p>The Android integration will request Contacts permission and load real contacts from your phone.</p></div>",
+            "</section>"
+        ].join("");
+    }
+
+    return [
+        "<div class='workspace-view calls-workspace'>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>PHONE CONTROL CENTRE</span><h2>Calls</h2><p>Dial, review call activity and find saved contacts.</p></div><div class='workspace-header-icon call-icon' aria-hidden='true'>☎</div></header>",
+        "<div class='workspace-subtabs' role='tablist' aria-label='Calling sections'>" + tabsHtml + "</div>",
+        "<div class='workspace-view-body'>" + callContent + "</div>",
+        "</div>"
+    ].join("");
+}
+
+function renderPhonecastMessagesWorkspace() {
+    return [
+        "<div class='workspace-view messages-workspace'>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>NOTIFICATION INBOX</span><h2>Messages</h2><p>Bring supported SMS and app notifications into one place.</p></div><div class='workspace-header-icon message-icon' aria-hidden='true'>▤</div></header>",
+        "<div class='messages-toolbar'>",
+        "<label class='workspace-search-wrap'><span aria-hidden='true'>⌕</span><input id='phonecastMessageSearch' class='workspace-input' type='search' placeholder='Search notifications and conversations...' autocomplete='off'></label>",
+        "<div class='message-filter-chips' role='group' aria-label='Filter messages'>",
+        "<button type='button' class='message-filter-chip active' data-message-filter='all' aria-pressed='true'>ALL</button>",
+        "<button type='button' class='message-filter-chip' data-message-filter='whatsapp' aria-pressed='false'>WHATSAPP</button>",
+        "<button type='button' class='message-filter-chip' data-message-filter='instagram' aria-pressed='false'>INSTAGRAM</button>",
+        "<button type='button' class='message-filter-chip' data-message-filter='sms' aria-pressed='false'>SMS</button>",
+        "<button type='button' class='message-filter-chip' data-message-filter='other' aria-pressed='false'>OTHERS</button>",
+        "</div></div>",
+        "<div class='messages-layout'>",
+        "<section class='workspace-card messages-list-card'><div class='workspace-card-heading'><div><span class='workspace-eyebrow'>RECENT</span><h3>Notifications and chats</h3></div><span class='integration-pill pending'>NOTIFICATION ACCESS</span></div>",
+        "<div class='workspace-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>▤</div><strong>Waiting for phone notifications</strong><p>After notification access is connected, supported messages will appear here. Replies will be enabled only when the source notification exposes a reply action.</p><button type='button' class='workspace-secondary-button' data-phonecast-action='enable-notifications'>SET UP NOTIFICATION ACCESS</button></div></section>",
+        "<section class='workspace-card message-conversation-card'><div class='conversation-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>↗</div><strong>Select a conversation</strong><p>Choose a message to read its available preview and reply when supported.</p></div>",
+        "<div class='message-reply-composer'><input class='workspace-input' type='text' placeholder='Reply requires a supported notification action' disabled aria-label='Reply to selected notification'><button type='button' class='workspace-primary-button' disabled title='Reply integration is not connected yet' aria-label='Send reply'>➤</button></div></section>",
+        "</div></div>"
+    ].join("");
+}
+
+function renderPhonecastPhoneyWorkspace() {
+    return [
+        "<div class='workspace-view phoney-workspace'>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>YOUR PHONE ASSISTANT</span><h2>Phoney</h2><p>An AI workspace for phone tasks. We'll design its actions separately.</p></div><div class='workspace-header-icon phoney-icon' aria-hidden='true'>✦</div></header>",
+        "<section class='workspace-card phoney-chat-card'>",
+        "<div class='phoney-welcome'><div class='phoney-orb' aria-hidden='true'><span>✦</span></div><span class='workspace-eyebrow'>PHONECAST AI</span><h3>Meet Phoney</h3><p>This space is reserved for the assistant experience. No AI actions are simulated yet.</p></div>",
+        "<div class='phoney-suggestion-grid'>",
+        "<button type='button' class='phoney-suggestion' disabled><span>▤</span><strong>Summarize notifications</strong><small>Planned</small></button>",
+        "<button type='button' class='phoney-suggestion' disabled><span>☎</span><strong>Help manage calls</strong><small>Planned</small></button>",
+        "<button type='button' class='phoney-suggestion' disabled><span>⌕</span><strong>Find a conversation</strong><small>Planned</small></button>",
+        "<button type='button' class='phoney-suggestion' disabled><span>⚙</span><strong>Change phone settings</strong><small>Planned</small></button>",
+        "</div><form class='phoney-composer' id='phonecastPhoneyForm'><input class='workspace-input' type='text' placeholder='Phoney command input will be added after brainstorming...' disabled aria-label='Ask Phoney'><button type='submit' class='workspace-primary-button' disabled aria-label='Send command'>➤</button></form>",
+        "</section></div>"
+    ].join("");
+}
+
+function renderPhonecastSettingsWorkspace() {
+    var query = phonecastSettingsQuery.trim().toLowerCase();
+    var visibleItems = PHONECAST_SETTINGS_ITEMS.filter(function (item) {
+        return !query || item.title.toLowerCase().includes(query) || item.detail.toLowerCase().includes(query);
+    });
+
+    var itemsHtml = visibleItems.map(function (item) {
+        return [
+            "<button type='button' class='settings-category-card' data-phonecast-setting-action='" + item.action + "' data-search='" + escapeHtml((item.title + " " + item.detail).toLowerCase()) + "'>",
+            "<span class='settings-category-icon' aria-hidden='true'>" + item.icon + "</span>",
+            "<span class='settings-category-copy'><strong>" + escapeHtml(item.title) + "</strong><small>" + escapeHtml(item.detail) + "</small></span>",
+            "<span class='settings-category-arrow' aria-hidden='true'>›</span>",
+            "</button>"
+        ].join("");
+    }).join("");
+
+    return [
+        "<div class='workspace-view settings-workspace'>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>CONNECTED ANDROID DEVICE</span><h2>Phone settings</h2><p>Open the corresponding system settings page on your phone.</p></div><div class='workspace-header-icon settings-icon' aria-hidden='true'>⚙</div></header>",
+        "<label class='workspace-search-wrap settings-search-wrap'><span aria-hidden='true'>⌕</span><input id='phonecastSettingsSearch' class='workspace-input' type='search' placeholder='Search phone settings...' value='" + escapeHtml(phonecastSettingsQuery) + "' autocomplete='off'></label>",
+        "<div class='settings-category-grid' id='phonecastSettingsGrid'>" + itemsHtml + "</div>",
+        (visibleItems.length ? "" : "<div class='workspace-empty-state compact-empty-state'><strong>No matching settings</strong><p>Try another search term.</p></div>"),
+        "<p class='workspace-inline-status " + (phonecastWorkspaceNotice ? "" : "hidden") + "' id='phonecastSettingsNotice' role='status'>" + escapeHtml(phonecastWorkspaceNotice) + "</p>",
+        "</div>"
+    ].join("");
+}
+
+function renderPhonecastWorkspaceContent() {
+    var host = document.getElementById("phoneCastWorkspaceContent");
+    if (!host) {
+        return;
+    }
+
+    switch (activePhonecastWorkspace) {
+        case "messages":
+            host.innerHTML = renderPhonecastMessagesWorkspace();
+            break;
+        case "phoney":
+            host.innerHTML = renderPhonecastPhoneyWorkspace();
+            break;
+        case "settings":
+            host.innerHTML = renderPhonecastSettingsWorkspace();
+            break;
+        case "calls":
+        default:
+            host.innerHTML = renderPhonecastCallsWorkspace();
+            break;
+    }
+
+    setupPhonecastWorkspaceContentEvents();
+}
+
+function setPhonecastWorkspace(workspace) {
+    var validWorkspaces = ["calls", "messages", "phoney", "settings"];
+    if (!validWorkspaces.includes(workspace)) {
+        return;
+    }
+
+    activePhonecastWorkspace = workspace;
+    phonecastWorkspaceNotice = "";
+
+    document.querySelectorAll("[data-phonecast-workspace]").forEach(function (button) {
+        var selected = button.dataset.phonecastWorkspace === workspace;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-selected", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+    });
+
+    renderPhonecastWorkspaceContent();
+}
+
+function setupPhonecastWorkspaceContentEvents() {
+    var host = document.getElementById("phoneCastWorkspaceContent");
+    if (!host) {
+        return;
+    }
+
+    host.querySelectorAll("[data-phonecast-call-view]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            activePhonecastCallView = button.dataset.phonecastCallView || "dialpad";
+            phonecastWorkspaceNotice = "";
+            renderPhonecastWorkspaceContent();
+        });
+    });
+
+    host.querySelectorAll("[data-dial-digit]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            phonecastDialNumber += button.dataset.dialDigit || "";
+            var input = document.getElementById("phonecastDialNumber");
+            if (input) {
+                input.value = phonecastDialNumber;
+                input.focus();
+            }
+        });
+    });
+
+    var dialNumberInput = document.getElementById("phonecastDialNumber");
+    dialNumberInput?.addEventListener("input", function () {
+        phonecastDialNumber = dialNumberInput.value.replace(/[^0-9+*#(), -]/g, "");
+        if (dialNumberInput.value !== phonecastDialNumber) {
+            dialNumberInput.value = phonecastDialNumber;
+        }
+    });
+
+    host.querySelector("[data-dial-action='clear']")?.addEventListener("click", function () {
+        phonecastDialNumber = "";
+        if (dialNumberInput) {
+            dialNumberInput.value = "";
+            dialNumberInput.focus();
+        }
+    });
+
+    host.querySelector("[data-dial-action='backspace']")?.addEventListener("click", function () {
+        phonecastDialNumber = phonecastDialNumber.slice(0, -1);
+        if (dialNumberInput) {
+            dialNumberInput.value = phonecastDialNumber;
+            dialNumberInput.focus();
+        }
+    });
+
+    host.querySelector("[data-dial-action='call']")?.addEventListener("click", function () {
+        phonecastWorkspaceNotice = phonecastDialNumber.trim()
+            ? "Calling integration is not connected yet. Use the live phone preview to place a call for now."
+            : "Enter a phone number first.";
+        renderPhonecastWorkspaceContent();
+    });
+
+    host.querySelectorAll("[data-message-filter]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            host.querySelectorAll("[data-message-filter]").forEach(function (item) {
+                var selected = item === button;
+                item.classList.toggle("active", selected);
+                item.setAttribute("aria-pressed", String(selected));
+            });
+        });
+    });
+
+    var settingsSearch = document.getElementById("phonecastSettingsSearch");
+    settingsSearch?.addEventListener("input", function () {
+        var cursorPosition = settingsSearch.selectionStart;
+        phonecastSettingsQuery = settingsSearch.value;
+        renderPhonecastWorkspaceContent();
+        var nextInput = document.getElementById("phonecastSettingsSearch");
+        nextInput?.focus();
+        if (nextInput && cursorPosition !== null) {
+            nextInput.setSelectionRange(cursorPosition, cursorPosition);
+        }
+    });
+
+    host.querySelectorAll("[data-phonecast-setting-action]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            phonecastWorkspaceNotice =
+                "The phone-settings bridge will be connected in the Android integration phase.";
+            renderPhonecastWorkspaceContent();
+        });
+    });
+
+    host.querySelector("[data-phonecast-action='enable-notifications']")?.addEventListener("click", function () {
+        phonecastWorkspaceNotice =
+            "Notification sync requires an Android notification-listener service and explicit user permission.";
+        var status = host.querySelector(".workspace-empty-state");
+        if (status) {
+            var note = document.createElement("p");
+            note.className = "workspace-inline-status";
+            note.setAttribute("role", "status");
+            note.textContent = phonecastWorkspaceNotice;
+            status.appendChild(note);
+        }
+    });
+}
+
+export function showCastingPage() {
     if (!ensureApp()) {
         return;
     }
 
-
-    state.currentPage =
-        "casting";
-
-
-    app.innerHTML = `
-
-        <div
-            class="casting-page"
-            id="castingPage"
-        >
-
-            <header class="casting-header">
-
-                <div class="casting-brand">
-
-                    <img
-                        src="./assets/logo.png"
-                        alt="PhoneCast"
-                    >
-
-                    <div>
-
-                        <strong>
-                            PhoneCast
-                        </strong>
-
-                        <span>
-                            LIVE SCREEN
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="casting-status">
-
-                    <span
-                        class="live-dot"
-                    ></span>
-
-                    <span
-                        id="phoneCastViewerStatus"
-                    >
-                        Preparing phone screen...
-                    </span>
-
-                </div>
-
-
-                <div class="casting-actions">
-
-                    <button
-                        type="button"
-                        id="fullscreenButton"
-                    >
-                        FULLSCREEN
-                    </button>
-
-                    <button
-                        type="button"
-                        id="presentationButton"
-                    >
-                        PRESENTATION
-                    </button>
-
-                    <button
-                        type="button"
-                        id="annotationButton"
-                    >
-                        ANNOTATE
-                    </button>
-
-                    <button
-                        type="button"
-                        id="clearAnnotationButton"
-                        class="hidden"
-                    >
-                        CLEAR
-                    </button>
-
-                    <button
-                        type="button"
-                        id="landscapeFitButton"
-                        aria-pressed="false"
-                    >
-                        LANDSCAPE FIT
-                    </button>
-
-
-                    <button
-                        type="button"
-                        id="disconnectButton"
-                        class="danger"
-                    >
-                        DISCONNECT
-                    </button>
-
-                </div>
-
-            </header>
-
-
-            <main class="casting-main">
-
-                <section class="viewer-shell">
-
-                    <div
-                        id="phoneCastViewerLoading"
-                        class="viewer-loading"
-                    >
-
-                        <div class="spinner"></div>
-
-                        <strong>
-                            Preparing phone screen
-                        </strong>
-
-                        <span>
-                            Waiting for H.264 video...
-                        </span>
-
-                    </div>
-
-
-                    <canvas
-                        id="phoneCastVideoCanvas"
-                    ></canvas>
-
-                    <canvas
-                        id="phoneCastAnnotationCanvas"
-                        aria-hidden="true"
-                    ></canvas>
-
-
-
-
-                    <div
-                        id="phoneCastViewerEmpty"
-                        class="viewer-empty"
-                    >
-
-                        <img
-                                src="./assets/logo.png"
-                            alt=""
-                        >
-
-                        <strong>
-                            Phone screen unavailable
-                        </strong>
-
-                        <span>
-                            Waiting for the video stream.
-                        </span>
-
-                    </div>
-
-                </section>
-
-                <aside class="viewer-info">
-
-                    <div class="info-card input-mode-card">
-
-                        <label>INPUT MODE</label>
-
-                        <div
-                            class="casting-actions input-mode-actions"
-                            role="group"
-                            aria-label="Remote input mode"
-                        >
-
-                            <button
-                                type="button"
-                                id="touchModeButton"
-                                aria-pressed="true"
-                                title="Use touchpad gestures to swipe the phone screen"
-                            >
-                                TOUCH
-                            </button>
-
-                            <button
-                                type="button"
-                                id="pointerModeButton"
-                                aria-pressed="false"
-                                title="Use a visible pointer for precise clicking"
-                            >
-                                POINTER
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                    <div class="info-card quick-navigation-card">
-
-                        <label>NAVIGATION</label>
-
-                        <div class="remote-navigation-controls">
-
-                            <button
-                                type="button"
-                                id="phoneBackButton"
-                                title="Android Back"
-                            >BACK</button>
-
-                            <button
-                                type="button"
-                                id="phoneHomeButton"
-                                title="Android Home"
-                            >HOME</button>
-
-                            <button
-                                type="button"
-                                id="phoneRecentsButton"
-                                title="Android Recent apps"
-                            >RECENTS</button>
-
-                        </div>
-
-                        <p class="input-mode-hint">
-                            Move to the bottom of the phone screen and swipe up to open Recents.
-                        </p>
-
-                    </div>
-
-                    <div class="info-card">
-
-                        <label>
-                            DEVICE
-                        </label>
-
-                        <strong>
-                            ${escapeHtml(
-                                getDeviceDisplayName(
-                                    state.selectedDevice
-                                ) ||
-                                "Android Phone"
-                            )}
-                        </strong>
-
-                    </div>
-
-
-                    <div class="info-card">
-
-                        <label>
-                            RESOLUTION
-                        </label>
-
-                        <strong id="phoneCastResolution">
-                            Waiting...
-                        </strong>
-
-                    </div>
-
-
-                    <div class="info-card">
-
-                        <label>
-                            FRAME RATE
-                        </label>
-
-                        <strong id="phoneCastFps">
-                            ${
-                                Number(
-                                    state.video?.fps
-                                ) || 60
-                            } FPS
-                        </strong>
-
-                    </div>
-
-
-                    <div class="info-card">
-
-                        <label>
-                            CODEC
-                        </label>
-
-                        <strong id="phoneCastCodec">
-                            ${escapeHtml(
-                                state.video?.codec ||
-                                "H.264"
-                            )}
-                        </strong>
-
-                    </div>
-
-                </aside>
-
-            </main>
-
-        </div>
-    `;
-
-
-    document
-        .getElementById(
-            "fullscreenButton"
-        )
-        ?.addEventListener(
-            "click",
-            toggleFullscreen
-        );
-
-    document
-        .getElementById(
-            "landscapeFitButton"
-        )
-        ?.addEventListener(
-            "click",
-            toggleLandscapeFit
-        );
-
-    document
-        .getElementById(
-            "presentationButton"
-        )
-        ?.addEventListener(
-            "click",
-            togglePresentationMode
-        );
-
-    document
-        .getElementById(
-            "annotationButton"
-        )
-        ?.addEventListener(
-            "click",
-            toggleAnnotations
-        );
-
-    document
-        .getElementById(
-            "clearAnnotationButton"
-        )
-        ?.addEventListener(
-            "click",
-            clearAnnotations
-        );
-
-
-    document
-        .getElementById(
-            "disconnectButton"
-        )
-        ?.addEventListener(
-            "click",
-            handleDisconnect
-        );
-
-
-    document
-        .getElementById("phoneBackButton")
-        ?.addEventListener("click", () => {
-            sendRemoteInput({
-                type: "INPUT_KEY",
-                key: "BACK"
-            });
+    state.currentPage = "casting";
+    activePhonecastWorkspace = "calls";
+    activePhonecastCallView = "dialpad";
+    phonecastDialNumber = "";
+    phonecastWorkspaceNotice = "";
+    phonecastSettingsQuery = "";
+
+    app.innerHTML = [
+        "<div class='casting-page phonecast-control-centre' id='castingPage'>",
+        "<header class='casting-header'>",
+        "<div class='casting-brand'><img src='./assets/logo.png' alt='PhoneCast'><div><strong>PhoneCast</strong><span>PHONE CONTROL CENTRE</span></div></div>",
+        "<div class='casting-status'><span class='live-dot'></span><span id='phoneCastViewerStatus'>Preparing phone screen...</span></div>",
+        "<div class='casting-actions casting-window-actions'>",
+        "<button type='button' id='fullscreenButton'>FULLSCREEN</button>",
+        "<button type='button' id='presentationButton'>PRESENTATION</button>",
+        "<button type='button' id='annotationButton'>ANNOTATE</button>",
+        "<button type='button' id='clearAnnotationButton' class='hidden'>CLEAR</button>",
+        "<button type='button' id='landscapeFitButton' aria-pressed='false'>LANDSCAPE FIT</button>",
+        "<button type='button' id='disconnectButton' class='danger'>DISCONNECT</button>",
+        "</div></header>",
+        "<main class='casting-main phonecast-control-main'>",
+        "<section class='phonecast-preview-column' aria-label='Live phone screen and navigation'>",
+        "<section class='viewer-shell'>",
+        "<div id='phoneCastViewerLoading' class='viewer-loading'><div class='spinner'></div><strong>Preparing phone screen</strong><span>Waiting for H.264 video...</span></div>",
+        "<canvas id='phoneCastVideoCanvas'></canvas>",
+        "<canvas id='phoneCastAnnotationCanvas' aria-hidden='true'></canvas>",
+        "<div id='phoneCastViewerEmpty' class='viewer-empty'><img src='./assets/logo.png' alt=''><strong>Phone screen unavailable</strong><span>Waiting for the video stream.</span></div>",
+        "</section>",
+        "<section class='phonecast-preview-controls'>",
+        "<div class='preview-controls-heading'><div><span class='workspace-eyebrow'>REMOTE INPUT</span><strong>Control your phone</strong></div><span class='preview-connected-chip'><span class='feature-status-dot'></span> CONNECTED</span></div>",
+        "<div class='preview-control-row'>",
+        "<div class='preview-mode-switch' role='group' aria-label='Remote input mode'><button type='button' id='touchModeButton' aria-pressed='true' title='Use touchpad gestures to swipe the phone screen'>TOUCH</button><button type='button' id='pointerModeButton' aria-pressed='false' title='Use a visible pointer for precise clicking'>POINTER</button></div>",
+        "<div class='remote-navigation-controls' aria-label='Android navigation'><button type='button' id='phoneBackButton' title='Android Back'>BACK</button><button type='button' id='phoneHomeButton' title='Android Home'>HOME</button><button type='button' id='phoneRecentsButton' title='Android Recent apps'>RECENTS</button></div>",
+        "</div>",
+        "<div class='preview-device-details'>",
+        "<div><span>DEVICE</span><strong>" + escapeHtml(getDeviceDisplayName(state.selectedDevice) || "Android Phone") + "</strong></div>",
+        "<div><span>RESOLUTION</span><strong id='phoneCastResolution'>Waiting...</strong></div>",
+        "<div><span>STREAM</span><strong><span id='phoneCastFps'>" + (Number(state.video?.fps) || 60) + " FPS</span> · <span id='phoneCastCodec'>" + escapeHtml(state.video?.codec || "H.264") + "</span></strong></div>",
+        "</div></section></section>",
+        "<section class='phonecast-workspace-column' aria-label='PhoneCast workspaces'>",
+        "<nav class='phonecast-module-tabs' role='tablist' aria-label='Phone functions'>",
+        "<button type='button' class='phonecast-module-tab active' data-phonecast-workspace='calls' role='tab' aria-selected='true' tabindex='0'><span aria-hidden='true'>☎</span><strong>Calls</strong></button>",
+        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='messages' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>▤</span><strong>Messages</strong></button>",
+        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='phoney' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>✦</span><strong>Phoney</strong></button>",
+        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='settings' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>⚙</span><strong>Settings</strong></button>",
+        "</nav>",
+        "<div id='phoneCastWorkspaceContent' class='phonecast-workspace-content' role='tabpanel'></div>",
+        "</section></main></div>"
+    ].join("");
+
+    document.getElementById("fullscreenButton")?.addEventListener("click", toggleFullscreen);
+    document.getElementById("landscapeFitButton")?.addEventListener("click", toggleLandscapeFit);
+    document.getElementById("presentationButton")?.addEventListener("click", togglePresentationMode);
+    document.getElementById("annotationButton")?.addEventListener("click", toggleAnnotations);
+    document.getElementById("clearAnnotationButton")?.addEventListener("click", clearAnnotations);
+    document.getElementById("disconnectButton")?.addEventListener("click", handleDisconnect);
+
+    document.getElementById("phoneBackButton")?.addEventListener("click", function () {
+        sendRemoteInput({ type: "INPUT_KEY", key: "BACK" });
+    });
+    document.getElementById("phoneHomeButton")?.addEventListener("click", function () {
+        sendRemoteInput({ type: "INPUT_KEY", key: "HOME" });
+    });
+    document.getElementById("phoneRecentsButton")?.addEventListener("click", function () {
+        sendRemoteInput({ type: "INPUT_KEY", key: "RECENTS" });
+    });
+
+    document.querySelectorAll("[data-phonecast-workspace]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            setPhonecastWorkspace(button.dataset.phonecastWorkspace || "calls");
         });
+    });
 
-    document
-        .getElementById("phoneHomeButton")
-        ?.addEventListener("click", () => {
-            sendRemoteInput({
-                type: "INPUT_KEY",
-                key: "HOME"
-            });
-        });
-
-    document
-        .getElementById("phoneRecentsButton")
-        ?.addEventListener("click", () => {
-            sendRemoteInput({
-                type: "INPUT_KEY",
-                key: "RECENTS"
-            });
-        });
-
-
+    renderPhonecastWorkspaceContent();
     initializeVideoViewerSafely();
-
     setupRemoteInput();
     setupPresenterOverlay();
 }
