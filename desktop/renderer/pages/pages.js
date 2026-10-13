@@ -2826,7 +2826,7 @@ function setupRemoteInput() {
          */
         if (
             inputMode === "touch" &&
-            deltaY <= -100 &&
+            deltaY <= -40 &&
             point.y >= height * 0.86
         ) {
             sendRemoteInput({
