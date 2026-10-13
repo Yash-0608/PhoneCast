@@ -82,6 +82,22 @@
                 android:resource="@xml/phonecast_accessibility_service" />
         </service>
 
+        <!--
+            Optional notification mirroring. The user must explicitly grant
+            Notification Access in Android Settings before the system binds
+            this service. Events are forwarded only during an authenticated
+            PhoneCast session.
+        -->
+        <service
+            android:name=".notifications.PhoneCastNotificationListenerService"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>
