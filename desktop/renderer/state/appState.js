@@ -18,6 +18,12 @@ export const state = {
     connectionHistory:
         [],
 
+    notifications:
+        [],
+
+    phoneActionStatus:
+        null,
+
     searching:
         false,
 
