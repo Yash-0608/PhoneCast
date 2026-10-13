@@ -604,6 +604,9 @@ private fun NoRequestsCard() {
                 contentDescription = "No connection requests",
                 modifier = Modifier
                     .size(105.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                    PhoneCastColors.NeonBlue
+                ),
                 contentScale = ContentScale.Fit
             )
 
@@ -876,6 +879,9 @@ private fun HistoryCard(
                 ),
                 contentDescription = "Laptop",
                 modifier = Modifier.size(32.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                    PhoneCastColors.NeonBlue
+                ),
                 contentScale = ContentScale.Fit
             )
         }
