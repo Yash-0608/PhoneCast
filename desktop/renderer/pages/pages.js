@@ -41,6 +41,8 @@ const app =
         "app"
     );
 
+let phoneWorkspaceEventListenerRegistered = false;
+
 
 // ============================================================
 // BASIC VALIDATION
@@ -2260,6 +2262,8 @@ export function showCastingPage() {
 
                     <div class="workspace-content">
 
+                        <div id="workspaceFeedback" class="workspace-feedback hidden" role="status" aria-live="polite"></div>
+
                         <section class="workspace-panel" id="workspacePanelScreen"
                             role="tabpanel" aria-labelledby="workspaceTabScreen"
                             data-workspace-panel="screen">
@@ -2389,24 +2393,21 @@ export function showCastingPage() {
                                     <button type="button" id="openPhoneDialerButton" class="primary-workspace-button" disabled>
                                         <span aria-hidden="true">☎</span> Open phone dialer
                                     </button>
-                                    <p class="integration-hint">The dial pad UI is ready. Phone dialer integration will be enabled after the Android command and call-permission flow is added.</p>
+                                    <p class="integration-hint">PhoneCast opens Android's native dialer with this number filled in. Confirm the call on your phone.</p>
                                 </div>
                             </div>
 
                             <div class="call-view-panel hidden" data-call-panel="recent" hidden>
-                                <div class="workspace-empty-state">
-                                    <span class="empty-state-icon" aria-hidden="true">◷</span>
-                                    <h2>Recent calls</h2>
-                                    <p>Call history will appear here once the Android call-log integration and its permission flow are implemented.</p>
-                                </div>
+                                <div id="recentCallsList" class="phone-data-list"></div>
                             </div>
 
                             <div class="call-view-panel hidden" data-call-panel="contacts" hidden>
-                                <div class="workspace-empty-state">
-                                    <span class="empty-state-icon" aria-hidden="true">♙</span>
-                                    <h2>Phone contacts</h2>
-                                    <p>Saved phone numbers will appear here after the contact provider and permission flow are connected.</p>
+                                <div class="contact-search-row">
+                                    <span aria-hidden="true">⌕</span>
+                                    <input type="search" id="contactSearchInput"
+                                        placeholder="Search saved contacts..." aria-label="Search saved contacts">
                                 </div>
+                                <div id="contactsList" class="phone-data-list"></div>
                             </div>
 
                         </section>
@@ -2427,21 +2428,35 @@ export function showCastingPage() {
                             <div class="message-search-row">
                                 <span aria-hidden="true">⌕</span>
                                 <input type="search" id="messageSearchInput"
-                                    placeholder="Search messages..." aria-label="Search messages" disabled>
+                                    placeholder="Search notifications..." aria-label="Search notifications">
                             </div>
 
                             <div class="message-filter-row" role="group" aria-label="Message filters">
-                                <button type="button" class="message-filter active" disabled>All</button>
-                                <button type="button" class="message-filter" disabled>SMS</button>
-                                <button type="button" class="message-filter" disabled>WhatsApp</button>
-                                <button type="button" class="message-filter" disabled>Instagram</button>
-                                <button type="button" class="message-filter" disabled>Other</button>
+                                <button type="button" class="message-filter active" data-message-filter="all">All</button>
+                                <button type="button" class="message-filter" data-message-filter="sms">SMS</button>
+                                <button type="button" class="message-filter" data-message-filter="whatsapp">WhatsApp</button>
+                                <button type="button" class="message-filter" data-message-filter="instagram">Instagram</button>
+                                <button type="button" class="message-filter" data-message-filter="other">Other</button>
                             </div>
 
-                            <div class="workspace-empty-state spacious">
+                            <section id="notificationAccessPrompt" class="workspace-card notification-access-prompt hidden">
+                                <div class="workspace-card-heading">
+                                    <div>
+                                        <h2>Enable notification access</h2>
+                                        <p>PhoneCast needs your approval to read notification previews and use reply actions supplied by supported apps.</p>
+                                    </div>
+                                </div>
+                                <button type="button" id="enableNotificationAccessButton" class="primary-workspace-button">
+                                    Open notification access settings
+                                </button>
+                            </section>
+
+                            <div id="messageList" class="notification-list" aria-live="polite"></div>
+
+                            <div class="workspace-empty-state spacious" id="notificationEmptyState">
                                 <span class="empty-state-icon" aria-hidden="true">▤</span>
-                                <h2>Connect your phone inbox</h2>
-                                <p>The current Android code does not yet include a notification listener. We'll add the explicit notification-access flow and supported quick-reply actions before showing real conversations here.</p>
+                                <h2>Your recent notifications will appear here</h2>
+                                <p>Grant notification access on your phone. Reply is available only when the originating app exposes a supported inline-reply action.</p>
                             </div>
 
                         </section>
@@ -2496,10 +2511,10 @@ export function showCastingPage() {
                                 <span class="settings-launch-icon" aria-hidden="true">⚙</span>
                                 <h2>Android Settings</h2>
                                 <p>This will open the real Settings app on your phone; it will appear in the live preview on the left.</p>
-                                <button type="button" id="openAndroidSettingsButton" class="primary-workspace-button" disabled>
+                                <button type="button" id="openAndroidSettingsButton" class="primary-workspace-button">
                                     Open phone settings
                                 </button>
-                                <small class="integration-hint">The button will be enabled when the authorized settings command is added to the phone-side control handler.</small>
+                                <small class="integration-hint">This opens the real Android Settings app on your phone.</small>
                             </div>
 
                             <div class="settings-category-grid">
@@ -2541,6 +2556,7 @@ export function showCastingPage() {
 
     setupWorkspaceTabs();
     setupCallDialPad();
+    setupPhoneWorkspaceData();
     initializeVideoViewerSafely();
     setupRemoteInput();
     setupPresenterOverlay();
@@ -2589,6 +2605,22 @@ function setupWorkspaceTabs() {
         if (workspaceContent) {
             workspaceContent.dataset.activeWorkspace = tabName;
             workspaceContent.scrollTop = 0;
+        }
+
+        if (tabName === "calls") {
+            if (!state.phoneData.callsLoaded && !state.phoneData.callsLoading) {
+                state.phoneData.callsLoading = true;
+                sendRemoteInput({ type: "GET_RECENT_CALLS" });
+            }
+            if (!state.phoneData.contactsLoaded && !state.phoneData.contactsLoading) {
+                state.phoneData.contactsLoading = true;
+                sendRemoteInput({ type: "GET_CONTACTS" });
+            }
+            renderCallWorkspaceData();
+        } else if (tabName === "messages") {
+            state.phoneData.notificationsLoading = true;
+            sendRemoteInput({ type: "GET_NOTIFICATIONS" });
+            renderNotificationWorkspaceData();
         }
     };
 
@@ -2669,18 +2701,462 @@ function setupCallDialPad() {
         });
     });
 
+    const openDialerButton =
+        document.getElementById("openPhoneDialerButton");
+
+    const updateDialerAvailability = () => {
+        if (openDialerButton) {
+            openDialerButton.disabled =
+                !String(input.value || "").trim();
+        }
+    };
+
+    input.addEventListener("input", updateDialerAvailability);
+
+    openDialerButton?.addEventListener("click", () => {
+        const number = String(input.value || "").trim();
+        if (!number) {
+            return;
+        }
+        sendRemoteInput({
+            type: "OPEN_PHONE_DIALER",
+            number
+        });
+    });
+
     clearButton?.addEventListener("click", () => {
         input.value = "";
+        updateDialerAvailability();
         input.focus();
+    });
+
+    document.querySelectorAll("[data-dial-number]").forEach(button => {
+        button.addEventListener("click", () => {
+            const number = button.dataset.dialNumber || "";
+            if (!number) {
+                return;
+            }
+            input.value = number;
+            updateDialerAvailability();
+            sendRemoteInput({
+                type: "OPEN_PHONE_DIALER",
+                number
+            });
+        });
     });
 
     input.addEventListener("keydown", event => {
 
         if (event.key === "Enter") {
             event.preventDefault();
-            document.getElementById("openPhoneDialerButton")?.focus();
+            if (String(input.value || "").trim()) {
+                sendRemoteInput({
+                    type: "OPEN_PHONE_DIALER",
+                    number: String(input.value || "").trim()
+                });
+            }
         }
     });
+
+    updateDialerAvailability();
+}
+
+
+function setupPhoneWorkspaceData() {
+
+    if (!phoneWorkspaceEventListenerRegistered) {
+
+        window.addEventListener("phonecast:phone-data", event => {
+
+            if (state.currentPage !== "casting") {
+                return;
+            }
+
+            const detail = event.detail || {};
+
+            if (
+                detail.type === "PHONE_COMMAND_ERROR" ||
+                detail.type === "PHONE_DATA_PERMISSION_DENIED"
+            ) {
+                showWorkspaceFeedback(
+                    detail.message ||
+                        "Android did not allow this phone action.",
+                    "warning"
+                );
+            } else if (detail.type === "NOTIFICATION_ACCESS_REQUIRED") {
+                showWorkspaceFeedback(
+                    "Enable PhoneCast under Android notification access settings to sync notifications.",
+                    "warning"
+                );
+            } else if (detail.type === "NOTIFICATION_REPLY_RESULT") {
+                showWorkspaceFeedback(
+                    detail.message ||
+                        (detail.success ? "Reply sent." : "Reply could not be sent."),
+                    detail.success ? "success" : "warning"
+                );
+
+                if (detail.success) {
+                    document.querySelectorAll("[data-notification-reply-input]").forEach(input => {
+                        if (input.dataset.notificationReplyInput === detail.notificationKey) {
+                            input.value = "";
+                        }
+                    });
+                }
+            } else if (detail.type === "PHONE_COMMAND_RESULT") {
+                showWorkspaceFeedback(
+                    detail.command === "OPEN_PHONE_SETTINGS"
+                        ? "Opened Android Settings on your phone."
+                        : detail.command === "OPEN_PHONE_DIALER"
+                            ? "Opened the native dialer. Confirm the call on your phone."
+                            : "Phone action completed.",
+                    "success"
+                );
+            } else {
+                showWorkspaceFeedback("", "");
+            }
+
+            renderCallWorkspaceData();
+            renderNotificationWorkspaceData();
+        });
+
+        phoneWorkspaceEventListenerRegistered = true;
+    }
+
+    document.getElementById("openAndroidSettingsButton")
+        ?.addEventListener("click", () => {
+            sendRemoteInput({ type: "OPEN_PHONE_SETTINGS" });
+        });
+
+    document.getElementById("enableNotificationAccessButton")
+        ?.addEventListener("click", () => {
+            sendRemoteInput({ type: "OPEN_NOTIFICATION_ACCESS_SETTINGS" });
+        });
+
+    document.getElementById("contactSearchInput")
+        ?.addEventListener("input", renderCallWorkspaceData);
+
+    document.getElementById("messageSearchInput")
+        ?.addEventListener("input", renderNotificationWorkspaceData);
+
+    document.querySelectorAll("[data-message-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+            document.querySelectorAll("[data-message-filter]").forEach(filter => {
+                filter.classList.toggle("active", filter === button);
+            });
+            renderNotificationWorkspaceData();
+        });
+    });
+
+    document.getElementById("messageList")?.addEventListener("click", event => {
+        const button = event.target.closest("[data-notification-reply]");
+        if (!button) {
+            return;
+        }
+
+        const notificationKey = button.dataset.notificationReply || "";
+        const actionIndex = Number(button.dataset.actionIndex);
+        const replyInput = Array.from(
+            document.querySelectorAll("[data-notification-reply-input]")
+        ).find(input => input.dataset.notificationReplyInput === notificationKey);
+        const text = String(replyInput?.value || "").trim();
+
+        if (!notificationKey || !Number.isInteger(actionIndex) || actionIndex < 0 || !text) {
+            showWorkspaceFeedback("Enter a reply before sending.", "warning");
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = "Sending…";
+
+        sendRemoteInput({
+            type: "REPLY_NOTIFICATION",
+            notificationKey,
+            actionIndex,
+            text
+        });
+    });
+
+    document.getElementById("recentCallsList")?.addEventListener("click", event => {
+        const button = event.target.closest("[data-dial-number]");
+        if (!button) {
+            return;
+        }
+
+        const number = button.dataset.dialNumber || "";
+        if (number) {
+            document.getElementById("callNumberInput").value = number;
+            sendRemoteInput({
+                type: "OPEN_PHONE_DIALER",
+                number
+            });
+        }
+    });
+
+    document.getElementById("contactsList")?.addEventListener("click", event => {
+        const button = event.target.closest("[data-dial-number]");
+        if (!button) {
+            return;
+        }
+
+        const number = button.dataset.dialNumber || "";
+        if (number) {
+            document.getElementById("callNumberInput").value = number;
+            sendRemoteInput({
+                type: "OPEN_PHONE_DIALER",
+                number
+            });
+        }
+    });
+
+    renderCallWorkspaceData();
+    renderNotificationWorkspaceData();
+}
+
+
+function showWorkspaceFeedback(message, kind = "") {
+    const feedback = document.getElementById("workspaceFeedback");
+    if (!feedback) {
+        return;
+    }
+
+    const cleaned = String(message || "").trim();
+    feedback.textContent = cleaned;
+    feedback.classList.toggle("hidden", !cleaned);
+    feedback.classList.toggle("warning", kind === "warning");
+    feedback.classList.toggle("success", kind === "success");
+}
+
+
+function formatPhoneTimestamp(value) {
+    const timestamp = Number(value);
+    if (!Number.isFinite(timestamp) || timestamp <= 0) {
+        return "Time unavailable";
+    }
+
+    try {
+        return new Date(timestamp).toLocaleString([], {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+    } catch (_) {
+        return "Time unavailable";
+    }
+}
+
+
+function formatPhoneDuration(value) {
+    const duration = Math.max(0, Math.floor(Number(value) || 0));
+    const minutes = Math.floor(duration / 60);
+    const seconds = duration % 60;
+    return minutes ? `${minutes}m ${seconds}s` : `${seconds}s`;
+}
+
+
+function renderCallWorkspaceData() {
+
+    const callsList = document.getElementById("recentCallsList");
+    const contactsList = document.getElementById("contactsList");
+
+    if (callsList) {
+        const calls = Array.isArray(state.phoneData.calls)
+            ? state.phoneData.calls
+            : [];
+
+        if (state.phoneData.callsLoading && !state.phoneData.callsLoaded) {
+            callsList.innerHTML = `
+                <div class="workspace-empty-state">
+                    <span class="spinner"></span>
+                    <h2>Loading recent calls</h2>
+                    <p>PhoneCast is waiting for Android's permission and call-history response.</p>
+                </div>`;
+        } else if (!calls.length) {
+            callsList.innerHTML = `
+                <div class="workspace-empty-state">
+                    <span class="empty-state-icon" aria-hidden="true">◷</span>
+                    <h2>No recent calls to show</h2>
+                    <p>Grant call-history permission if Android asks. New call history will appear here when available.</p>
+                </div>`;
+        } else {
+            callsList.innerHTML = calls.map(call => {
+                const number = String(call.number || "");
+                const name = String(call.name || number || "Unknown caller");
+                const type = String(call.type || "CALL").toLowerCase().replace(/_/g, " ");
+                const duration = call.type === "MISSED"
+                    ? "Missed call"
+                    : `Duration ${formatPhoneDuration(call.durationSeconds)}`;
+
+                return `
+                    <article class="phone-data-row">
+                        <div class="phone-data-avatar" aria-hidden="true">${escapeHtml(name.slice(0, 1).toUpperCase())}</div>
+                        <div class="phone-data-row-copy">
+                            <strong>${escapeHtml(name)}</strong>
+                            <small>${escapeHtml(type)} · ${escapeHtml(formatPhoneTimestamp(call.timestamp))}</small>
+                            <small>${escapeHtml(duration)}</small>
+                        </div>
+                        <button type="button" class="phone-data-action" data-dial-number="${escapeHtml(number)}"
+                            ${number ? "" : "disabled"}>CALL</button>
+                    </article>`;
+            }).join("");
+        }
+    }
+
+    if (contactsList) {
+        const contacts = Array.isArray(state.phoneData.contacts)
+            ? state.phoneData.contacts
+            : [];
+        const query = String(
+            document.getElementById("contactSearchInput")?.value || ""
+        ).trim().toLowerCase();
+
+        const filtered = contacts.filter(contact =>
+            `${contact.name || ""} ${contact.number || ""}`
+                .toLowerCase()
+                .includes(query)
+        );
+
+        if (state.phoneData.contactsLoading && !state.phoneData.contactsLoaded) {
+            contactsList.innerHTML = `
+                <div class="workspace-empty-state">
+                    <span class="spinner"></span>
+                    <h2>Loading contacts</h2>
+                    <p>Android may ask you to grant Contacts permission.</p>
+                </div>`;
+        } else if (!filtered.length) {
+            contactsList.innerHTML = `
+                <div class="workspace-empty-state">
+                    <span class="empty-state-icon" aria-hidden="true">♙</span>
+                    <h2>No matching contacts</h2>
+                    <p>Grant Contacts permission when requested, or try a different search.</p>
+                </div>`;
+        } else {
+            contactsList.innerHTML = filtered.map(contact => {
+                const name = String(contact.name || contact.number || "Unnamed contact");
+                const number = String(contact.number || "");
+                return `
+                    <article class="phone-data-row">
+                        <div class="phone-data-avatar" aria-hidden="true">${escapeHtml(name.slice(0, 1).toUpperCase())}</div>
+                        <div class="phone-data-row-copy">
+                            <strong>${escapeHtml(name)}</strong>
+                            <small>${escapeHtml(number)}</small>
+                        </div>
+                        <button type="button" class="phone-data-action" data-dial-number="${escapeHtml(number)}"
+                            ${number ? "" : "disabled"}>CALL</button>
+                    </article>`;
+            }).join("");
+        }
+    }
+}
+
+
+function renderNotificationWorkspaceData() {
+
+    const list = document.getElementById("messageList");
+    const emptyState = document.getElementById("notificationEmptyState");
+    const accessPrompt = document.getElementById("notificationAccessPrompt");
+
+    if (!list || !emptyState || !accessPrompt) {
+        return;
+    }
+
+    const accessGranted = Boolean(state.phoneData.notificationAccessGranted);
+    accessPrompt.classList.toggle("hidden", accessGranted);
+
+    const all = Array.isArray(state.phoneData.notifications)
+        ? state.phoneData.notifications
+        : [];
+    const query = String(
+        document.getElementById("messageSearchInput")?.value || ""
+    ).trim().toLowerCase();
+    const filter = document.querySelector("[data-message-filter].active")
+        ?.dataset.messageFilter || "all";
+
+    const isSms = item => /sms|mms|messaging|messages|telephony/i.test(
+        `${item.packageName || ""} ${item.appName || ""}`
+    );
+    const matchesFilter = item => {
+        const app = `${item.packageName || ""} ${item.appName || ""}`.toLowerCase();
+        switch (filter) {
+            case "sms": return isSms(item);
+            case "whatsapp": return app.includes("whatsapp");
+            case "instagram": return app.includes("instagram");
+            case "other": return !isSms(item) && !app.includes("whatsapp") && !app.includes("instagram");
+            default: return true;
+        }
+    };
+
+    const notifications = all
+        .filter(item => matchesFilter(item))
+        .filter(item => `${item.appName || ""} ${item.title || ""} ${item.text || ""}`
+            .toLowerCase()
+            .includes(query))
+        .sort((a, b) => Number(b.postedAt || 0) - Number(a.postedAt || 0));
+
+    if (state.phoneData.notificationsLoading && !state.phoneData.notificationsLoaded && !notifications.length) {
+        list.innerHTML = `
+            <div class="workspace-empty-state">
+                <span class="spinner"></span>
+                <h2>Syncing notifications</h2>
+                <p>Waiting for Android notification access and active phone notifications.</p>
+            </div>`;
+        emptyState.classList.add("hidden");
+        return;
+    }
+
+    list.innerHTML = notifications.map(item => {
+        const key = String(item.key || "");
+        const actionIndex = Number(item.replyActionIndex);
+        const canReply = Boolean(item.canReply) &&
+            item.active !== false &&
+            key &&
+            Number.isInteger(actionIndex) &&
+            actionIndex >= 0;
+
+        const replyMarkup = canReply
+            ? `
+                <div class="notification-reply-row">
+                    <input type="text" maxlength="4000"
+                        data-notification-reply-input="${escapeHtml(key)}"
+                        placeholder="Reply to ${escapeHtml(item.appName || "notification")}…"
+                        aria-label="Reply to ${escapeHtml(item.appName || "notification")}">
+                    <button type="button" data-notification-reply="${escapeHtml(key)}"
+                        data-action-index="${actionIndex}">REPLY</button>
+                </div>`
+            : `<small class="notification-reply-unavailable">${item.active === false
+                ? "This notification is no longer active."
+                : "No inline reply action is available for this notification."}</small>`;
+
+        return `
+            <article class="notification-card">
+                <div class="notification-card-top">
+                    <div class="notification-app-icon" aria-hidden="true">${escapeHtml(String(item.appName || "App").slice(0, 1).toUpperCase())}</div>
+                    <div class="notification-heading-copy">
+                        <strong>${escapeHtml(item.appName || item.packageName || "Phone notification")}</strong>
+                        <small>${escapeHtml(formatPhoneTimestamp(item.postedAt))}</small>
+                    </div>
+                    <span class="notification-state-dot ${item.active === false ? "inactive" : ""}"></span>
+                </div>
+                <div class="notification-copy">
+                    <strong>${escapeHtml(item.title || item.appName || "Notification")}</strong>
+                    <p>${escapeHtml(item.text || "No preview text was provided.")}</p>
+                </div>
+                ${replyMarkup}
+            </article>`;
+    }).join("");
+
+    emptyState.classList.toggle("hidden", notifications.length > 0);
+
+    if (!notifications.length) {
+        emptyState.querySelector("h2").textContent =
+            accessGranted
+                ? "No matching notifications"
+                : "Your recent notifications will appear here";
+        emptyState.querySelector("p").textContent =
+            accessGranted
+                ? "Try another filter or search term. Some apps do not expose notification previews."
+                : "Grant notification access on your phone. Reply is available only when the originating app exposes a supported inline-reply action.";
+    }
 }
 
 
