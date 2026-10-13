@@ -1015,7 +1015,7 @@ export function showHomePage() {
                 <div class="sidebar-brand">
 
                     <img
-                        src="./assets/logo.png"
+                        src="./assets/phonecast-mark.svg"
                         alt="PhoneCast"
                     >
 
@@ -1332,7 +1332,7 @@ function renderDevices() {
                         <div class="device-icon">
 
                             <img
-                                src="./assets/logo.png"
+                                src="./assets/phonecast-mark.svg"
                                 alt=""
                             >
 
@@ -1444,7 +1444,7 @@ function renderHistory() {
                         <div class="history-device">
 
                             <img
-                                src="./assets/logo.png"
+                                src="./assets/phonecast-mark.svg"
                                 alt=""
                             >
 
@@ -2026,7 +2026,7 @@ function renderSidebar(
             <div class="sidebar-brand">
 
                 <img
-                    src="./assets/logo.png"
+                    src="./assets/phonecast-mark.svg"
                     alt="PhoneCast"
                 >
 
@@ -2134,6 +2134,32 @@ let phonecastMessageFilter = "all";
 let activePhonecastMessageKey = "";
 let phonecastNotificationListenerRegistered = false;
 
+/* Inline SVG glyphs keep the desktop app dependency-free. */
+function phonecastGlyph(name, size = 18) {
+    const paths = {
+        call: "<path d='M21 16.4v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 10.2 18a19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 1.9 3.2 2 2 0 0 1 3.9 1h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 1.8L7 9a16 16 0 0 0 6 6l1.7-1.8a2 2 0 0 1 1.8-.6l2.8.5a2 2 0 0 1 1.7 2Z'/>",
+        messages: "<path d='M21 11.5a7.5 7.5 0 0 1-7.5 7.5H7l-4 3v-6.5A7.5 7.5 0 1 1 21 11.5Z'/><path d='M8 10h8M8 13.5h5'/>",
+        sparkles: "<path d='m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3Z'/><path d='m19 15 .9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9L19 15Z'/>",
+        settings: "<path d='M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z'/><path d='m19.4 15 .1.1 1.4 1.1-1.8 3.1-1.7-.6a8 8 0 0 1-1.7 1l-.3 1.8h-3.6l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.6-1.8-3.1 1.4-1.1a8 8 0 0 1 0-2L6.3 12l1.8-3.1 1.7.6a8 8 0 0 1 1.7-1l.3-1.8h3.6l.3 1.8a8 8 0 0 1 1.7 1l1.7-.6 1.8 3.1-1.4 1.1a8 8 0 0 1-.1 2Z'/>",
+        search: "<circle cx='10.5' cy='10.5' r='6.5'/><path d='m16 16 5 5'/>",
+        phone: "<rect x='5' y='2' width='14' height='20' rx='2.5'/><path d='M10 18h4'/>",
+        screen: "<rect x='2' y='3' width='20' height='14' rx='2'/><path d='M8 21h8M12 17v4'/>",
+        wifi: "<path d='M2 8.5a15.5 15.5 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a4.7 4.7 0 0 1 6 0M12 19h.01'/>",
+        history: "<path d='M3 12a9 9 0 1 0 2.6-6.4L3 8'/><path d='M3 3v5h5M12 7v5l3 2'/>",
+        touch: "<path d='M8 11V5a2 2 0 0 1 4 0v5-2a2 2 0 0 1 4 0v3-1a2 2 0 0 1 4 0v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-4-1.5L5 16a2 2 0 0 1 3-2l2 2'/>",
+        bell: "<path d='M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4'/>",
+        back: "<path d='m15 18-6-6 6-6'/>",
+        home: "<path d='m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1Z'/>",
+        recents: "<rect x='4' y='4' width='16' height='16' rx='3'/>",
+        shield: "<path d='M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z'/><path d='m9 12 2 2 4-4'/>",
+        arrow: "<path d='m9 18 6-6-6-6'/>"
+    };
+    return "<svg class='phonecast-glyph' width='" + size + "' height='" + size +
+        "' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' " +
+        "stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>" +
+        (paths[name] || paths.sparkles) + "</svg>";
+}
+
 const PHONECAST_SETTINGS_ITEMS = [
     { icon: "⌁", title: "Network & internet", detail: "Wi-Fi, mobile network, hotspot", action: "OPEN_SETTINGS_NETWORK" },
     { icon: "▣", title: "Connected devices", detail: "Bluetooth, pairing and USB", action: "OPEN_SETTINGS_CONNECTED_DEVICES" },
@@ -2220,7 +2246,7 @@ function renderPhonecastCallsWorkspace() {
 
     return [
         "<div class='workspace-view calls-workspace'>",
-        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>PHONE CONTROL CENTRE</span><h2>Calls</h2><p>Dial, review call activity and find saved contacts.</p></div><div class='workspace-header-icon call-icon' aria-hidden='true'>☎</div></header>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>PHONE CONTROL CENTRE</span><h2>Calls</h2><p>Dial, review call activity and find saved contacts.</p></div><div class='workspace-header-icon call-icon' aria-hidden='true'>" + phonecastGlyph("call", 24) + "</div></header>",
         "<div class='workspace-subtabs' role='tablist' aria-label='Calling sections'>" + tabsHtml + "</div>",
         "<div class='workspace-view-body'>" + callContent + "</div>",
         "</div>"
@@ -2408,7 +2434,7 @@ function renderPhonecastMessagesWorkspace() {
 
     return [
         "<div class='workspace-view messages-workspace'>",
-        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>NOTIFICATION INBOX</span><h2>Messages</h2><p>Phone notifications and supported quick replies.</p></div><div class='workspace-header-icon message-icon' aria-hidden='true'>▤</div></header>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>NOTIFICATION INBOX</span><h2>Messages</h2><p>Phone notifications and supported quick replies.</p></div><div class='workspace-header-icon message-icon' aria-hidden='true'>" + phonecastGlyph("messages", 24) + "</div></header>",
         "<div class='messages-toolbar'>",
         "<label class='workspace-search-wrap'><span aria-hidden='true'>⌕</span><input id='phonecastMessageSearch' class='workspace-input' type='search' placeholder='Search notifications and conversations...' value='" + escapeHtml(phonecastMessageQuery) + "' autocomplete='off'></label>",
         "<div class='message-filter-chips' role='group' aria-label='Filter messages'>" + filtersHtml + "</div>",
@@ -2424,7 +2450,7 @@ function renderPhonecastMessagesWorkspace() {
 function renderPhonecastPhoneyWorkspace() {
     return [
         "<div class='workspace-view phoney-workspace'>",
-        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>YOUR PHONE ASSISTANT</span><h2>Phoney</h2><p>An AI workspace for phone tasks. We'll design its actions separately.</p></div><div class='workspace-header-icon phoney-icon' aria-hidden='true'>✦</div></header>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>YOUR PHONE ASSISTANT</span><h2>Phoney</h2><p>An AI workspace for phone tasks. We'll design its actions separately.</p></div><div class='workspace-header-icon phoney-icon' aria-hidden='true'>" + phonecastGlyph("sparkles", 24) + "</div></header>",
         "<section class='workspace-card phoney-chat-card'>",
         "<div class='phoney-welcome'><div class='phoney-orb' aria-hidden='true'><span>✦</span></div><span class='workspace-eyebrow'>PHONECAST AI</span><h3>Meet Phoney</h3><p>This space is reserved for the assistant experience. No AI actions are simulated yet.</p></div>",
         "<div class='phoney-suggestion-grid'>",
@@ -2455,7 +2481,7 @@ function renderPhonecastSettingsWorkspace() {
 
     return [
         "<div class='workspace-view settings-workspace'>",
-        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>CONNECTED ANDROID DEVICE</span><h2>Phone settings</h2><p>Open the corresponding system settings page on your phone.</p></div><div class='workspace-header-icon settings-icon' aria-hidden='true'>⚙</div></header>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>CONNECTED ANDROID DEVICE</span><h2>Phone settings</h2><p>Open the corresponding system settings page on your phone.</p></div><div class='workspace-header-icon settings-icon' aria-hidden='true'>" + phonecastGlyph("settings", 24) + "</div></header>",
         "<label class='workspace-search-wrap settings-search-wrap'><span aria-hidden='true'>⌕</span><input id='phonecastSettingsSearch' class='workspace-input' type='search' placeholder='Search phone settings...' value='" + escapeHtml(phonecastSettingsQuery) + "' autocomplete='off'></label>",
         "<div class='settings-category-grid' id='phonecastSettingsGrid'>" + itemsHtml + "</div>",
         (visibleItems.length ? "" : "<div class='workspace-empty-state compact-empty-state'><strong>No matching settings</strong><p>Try another search term.</p></div>"),
@@ -2733,7 +2759,7 @@ export function showCastingPage() {
     app.innerHTML = [
         "<div class='casting-page phonecast-control-centre' id='castingPage'>",
         "<header class='casting-header'>",
-        "<div class='casting-brand'><img src='./assets/logo.png' alt='PhoneCast'><div><strong>PhoneCast</strong><span>PHONE CONTROL CENTRE</span></div></div>",
+        "<div class='casting-brand'><img src='./assets/phonecast-mark.svg' alt='PhoneCast'><div><strong>PhoneCast</strong><span>PHONE CONTROL CENTRE</span></div></div>",
         "<div class='casting-status'><span class='live-dot'></span><span id='phoneCastViewerStatus'>Preparing phone screen...</span></div>",
         "<div class='casting-actions casting-window-actions'>",
         "<button type='button' id='fullscreenButton'>FULLSCREEN</button>",
@@ -2749,7 +2775,7 @@ export function showCastingPage() {
         "<div id='phoneCastViewerLoading' class='viewer-loading'><div class='spinner'></div><strong>Preparing phone screen</strong><span>Waiting for H.264 video...</span></div>",
         "<canvas id='phoneCastVideoCanvas'></canvas>",
         "<canvas id='phoneCastAnnotationCanvas' aria-hidden='true'></canvas>",
-        "<div id='phoneCastViewerEmpty' class='viewer-empty'><img src='./assets/logo.png' alt=''><strong>Phone screen unavailable</strong><span>Waiting for the video stream.</span></div>",
+        "<div id='phoneCastViewerEmpty' class='viewer-empty'><img src='./assets/phonecast-mark.svg' alt=''><strong>Phone screen unavailable</strong><span>Waiting for the video stream.</span></div>",
         "</section>",
         "<section class='phonecast-preview-controls'>",
         "<div class='preview-controls-heading'><div><span class='workspace-eyebrow'>REMOTE INPUT</span><strong>Control your phone</strong></div><span class='preview-connected-chip'><span class='feature-status-dot'></span> CONNECTED</span></div>",
@@ -2764,10 +2790,10 @@ export function showCastingPage() {
         "</div></section></section>",
         "<section class='phonecast-workspace-column' aria-label='PhoneCast workspaces'>",
         "<nav class='phonecast-module-tabs' role='tablist' aria-label='Phone functions'>",
-        "<button type='button' class='phonecast-module-tab active' data-phonecast-workspace='calls' role='tab' aria-selected='true' tabindex='0'><span aria-hidden='true'>☎</span><strong>Calls</strong></button>",
-        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='messages' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>▤</span><strong>Messages</strong></button>",
-        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='phoney' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>✦</span><strong>Phoney</strong></button>",
-        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='settings' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>⚙</span><strong>Settings</strong></button>",
+        "<button type='button' class='phonecast-module-tab active' data-phonecast-workspace='calls' role='tab' aria-selected='true' tabindex='0'><span aria-hidden='true'>" + phonecastGlyph("call", 18) + "</span><strong>Calls</strong></button>",
+        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='messages' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>" + phonecastGlyph("messages", 18) + "</span><strong>Messages</strong></button>",
+        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='phoney' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>" + phonecastGlyph("sparkles", 18) + "</span><strong>Phoney</strong></button>",
+        "<button type='button' class='phonecast-module-tab' data-phonecast-workspace='settings' role='tab' aria-selected='false' tabindex='-1'><span aria-hidden='true'>" + phonecastGlyph("settings", 18) + "</span><strong>Settings</strong></button>",
         "</nav>",
         "<div id='phoneCastWorkspaceContent' class='phonecast-workspace-content' role='tabpanel'></div>",
         "</section></main></div>"
