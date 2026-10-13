@@ -2129,6 +2129,10 @@ let activePhonecastCallView = "dialpad";
 let phonecastDialNumber = "";
 let phonecastWorkspaceNotice = "";
 let phonecastSettingsQuery = "";
+let phonecastMessageQuery = "";
+let phonecastMessageFilter = "all";
+let activePhonecastMessageKey = "";
+let phonecastNotificationListenerRegistered = false;
 
 const PHONECAST_SETTINGS_ITEMS = [
     { icon: "⌁", title: "Network & internet", detail: "Wi-Fi, mobile network, hotspot", action: "OPEN_SETTINGS_NETWORK" },
@@ -2223,24 +2227,196 @@ function renderPhonecastCallsWorkspace() {
     ].join("");
 }
 
+
+function getPhonecastNotificationCategory(notification) {
+    var appName = String(notification.appName || "").toLowerCase();
+    var packageName = String(notification.packageName || "").toLowerCase();
+
+    if (packageName.includes("whatsapp") || appName.includes("whatsapp")) {
+        return "whatsapp";
+    }
+
+    if (packageName.includes("instagram") || appName.includes("instagram")) {
+        return "instagram";
+    }
+
+    if (
+        packageName.includes("messaging") ||
+        packageName.includes("mms") ||
+        packageName.includes("sms") ||
+        appName === "messages" ||
+        appName.includes("sms") ||
+        appName.includes("message")
+    ) {
+        return "sms";
+    }
+
+    return "other";
+}
+
+function formatPhonecastNotificationTime(timestamp) {
+    var value = Number(timestamp);
+    if (!Number.isFinite(value) || value <= 0) {
+        return "";
+    }
+
+    try {
+        var date = new Date(value);
+        var today = new Date();
+        if (
+            date.getFullYear() === today.getFullYear() &&
+            date.getMonth() === today.getMonth() &&
+            date.getDate() === today.getDate()
+        ) {
+            return date.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        return date.toLocaleDateString([], {
+            day: "numeric",
+            month: "short"
+        });
+    } catch (_) {
+        return "";
+    }
+}
+
 function renderPhonecastMessagesWorkspace() {
+    var query = phonecastMessageQuery.trim().toLowerCase();
+    var allNotifications = Array.isArray(state.notifications)
+        ? state.notifications
+        : [];
+
+    var filteredNotifications = allNotifications.filter(function (item) {
+        var category = getPhonecastNotificationCategory(item);
+        var matchesFilter =
+            phonecastMessageFilter === "all" ||
+            category === phonecastMessageFilter;
+
+        var searchableText = [
+            item.appName,
+            item.packageName,
+            item.title,
+            item.text
+        ].join(" ").toLowerCase();
+
+        return matchesFilter && (!query || searchableText.includes(query));
+    });
+
+    if (
+        !activePhonecastMessageKey ||
+        !filteredNotifications.some(function (item) {
+            return String(item.key) === activePhonecastMessageKey;
+        })
+    ) {
+        activePhonecastMessageKey = filteredNotifications.length
+            ? String(filteredNotifications[0].key)
+            : "";
+    }
+
+    var selectedNotification = filteredNotifications.find(function (item) {
+        return String(item.key) === activePhonecastMessageKey;
+    }) || null;
+
+    var filters = [
+        { id: "all", label: "ALL" },
+        { id: "whatsapp", label: "WHATSAPP" },
+        { id: "instagram", label: "INSTAGRAM" },
+        { id: "sms", label: "SMS" },
+        { id: "other", label: "OTHERS" }
+    ];
+
+    var filtersHtml = filters.map(function (filter) {
+        var selected = phonecastMessageFilter === filter.id;
+        return "<button type='button' class='message-filter-chip" +
+            (selected ? " active" : "") +
+            "' data-message-filter='" + filter.id +
+            "' aria-pressed='" + String(selected) + "'>" +
+            filter.label + "</button>";
+    }).join("");
+
+    var notificationListHtml = "";
+
+    if (filteredNotifications.length) {
+        notificationListHtml = filteredNotifications.map(function (item) {
+            var key = String(item.key);
+            var encodedKey = encodeURIComponent(key);
+            var selected = key === activePhonecastMessageKey;
+            var appName = escapeHtml(item.appName || "App notification");
+            var title = escapeHtml(item.title || item.appName || "Notification");
+            var body = escapeHtml(item.text || "No preview text available.");
+            var time = escapeHtml(formatPhonecastNotificationTime(item.postTime));
+            var replyLabel = item.hasReplyAction ? "REPLY SUPPORTED" : "NOTIFICATION";
+
+            return [
+                "<button type='button' class='phonecast-notification-row" + (selected ? " active" : "") + "' data-notification-select='" + encodedKey + "' aria-pressed='" + String(selected) + "'>",
+                "<span class='notification-app-mark'>" + escapeHtml((item.appName || "A").trim().slice(0, 1).toUpperCase()) + "</span>",
+                "<span class='notification-row-copy'><span class='notification-row-top'><strong>" + appName + "</strong><time>" + time + "</time></span>",
+                "<strong class='notification-row-title'>" + title + "</strong><span class='notification-row-preview'>" + body + "</span><small>" + replyLabel + "</small></span>",
+                "</button>"
+            ].join("");
+        }).join("");
+    } else {
+        notificationListHtml = [
+            "<div class='workspace-empty-state notification-empty-state'>",
+            "<div class='workspace-empty-icon' aria-hidden='true'>▤</div>",
+            "<strong>" + (allNotifications.length ? "No matching notifications" : "Waiting for phone notifications") + "</strong>",
+            "<p>" + (allNotifications.length
+                ? "Try another search term or app filter."
+                : "Enable PhoneCast notification access on your phone. Only actual notifications from your phone will appear here.") + "</p>",
+            (!allNotifications.length
+                ? "<button type='button' class='workspace-secondary-button' data-phonecast-action='enable-notifications'>SET UP NOTIFICATION ACCESS</button>"
+                : ""),
+            "</div>"
+        ].join("");
+    }
+
+    var conversationHtml = "";
+
+    if (selectedNotification) {
+        var selectedKey = String(selectedNotification.key);
+        var encodedSelectedKey = encodeURIComponent(selectedKey);
+        var safeTitle = escapeHtml(selectedNotification.title || selectedNotification.appName || "Notification");
+        var safeAppName = escapeHtml(selectedNotification.appName || "App notification");
+        var safeText = escapeHtml(selectedNotification.text || "No preview text available.");
+        var replySupported = Boolean(selectedNotification.hasReplyAction);
+        var actionStatus = state.phoneActionStatus &&
+            String(state.phoneActionStatus.notificationKey || "") === selectedKey
+            ? "<p class='workspace-inline-status' role='status'>" + escapeHtml(state.phoneActionStatus.message || "") + "</p>"
+            : "";
+
+        conversationHtml = [
+            "<div class='message-detail-heading'><span class='workspace-eyebrow'>" + safeAppName + "</span><h3>" + safeTitle + "</h3><time>" + escapeHtml(formatPhonecastNotificationTime(selectedNotification.postTime)) + "</time></div>",
+            "<div class='message-detail-body'><p>" + safeText + "</p></div>",
+            "<div class='message-detail-actions'>",
+            "<span class='integration-pill " + (replySupported ? "reply-available" : "pending") + "'>" + (replySupported ? "REPLY ACTION AVAILABLE" : "NO QUICK REPLY ACTION") + "</span>",
+            "<button type='button' class='workspace-secondary-button notification-dismiss-button' data-message-action='dismiss' data-notification-key='" + encodedSelectedKey + "'>DISMISS</button>",
+            "</div>",
+            (replySupported
+                ? "<div class='message-reply-composer'><textarea id='phonecastReplyText' class='workspace-input' rows='2' placeholder='Write a reply...' aria-label='Write a reply'></textarea><button type='button' class='workspace-primary-button' data-message-action='reply' data-notification-key='" + encodedSelectedKey + "' aria-label='Send reply'>➤</button></div>"
+                : "<div class='message-reply-composer'><textarea class='workspace-input' rows='2' placeholder='This notification does not expose a reply action.' disabled aria-label='Reply unavailable'></textarea><button type='button' class='workspace-primary-button' disabled aria-label='Send reply'>➤</button></div>"),
+            actionStatus
+        ].join("");
+    } else {
+        conversationHtml = [
+            "<div class='conversation-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>↗</div><strong>Select a notification</strong><p>Choose an item to see its actual preview and reply when the app provides a supported reply action.</p></div>",
+            "<div class='message-reply-composer'><textarea class='workspace-input' rows='2' placeholder='Select a message to reply' disabled aria-label='Reply unavailable'></textarea><button type='button' class='workspace-primary-button' disabled aria-label='Send reply'>➤</button></div>"
+        ].join("");
+    }
+
     return [
         "<div class='workspace-view messages-workspace'>",
-        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>NOTIFICATION INBOX</span><h2>Messages</h2><p>Bring supported SMS and app notifications into one place.</p></div><div class='workspace-header-icon message-icon' aria-hidden='true'>▤</div></header>",
+        "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>NOTIFICATION INBOX</span><h2>Messages</h2><p>Phone notifications and supported quick replies.</p></div><div class='workspace-header-icon message-icon' aria-hidden='true'>▤</div></header>",
         "<div class='messages-toolbar'>",
-        "<label class='workspace-search-wrap'><span aria-hidden='true'>⌕</span><input id='phonecastMessageSearch' class='workspace-input' type='search' placeholder='Search notifications and conversations...' autocomplete='off'></label>",
-        "<div class='message-filter-chips' role='group' aria-label='Filter messages'>",
-        "<button type='button' class='message-filter-chip active' data-message-filter='all' aria-pressed='true'>ALL</button>",
-        "<button type='button' class='message-filter-chip' data-message-filter='whatsapp' aria-pressed='false'>WHATSAPP</button>",
-        "<button type='button' class='message-filter-chip' data-message-filter='instagram' aria-pressed='false'>INSTAGRAM</button>",
-        "<button type='button' class='message-filter-chip' data-message-filter='sms' aria-pressed='false'>SMS</button>",
-        "<button type='button' class='message-filter-chip' data-message-filter='other' aria-pressed='false'>OTHERS</button>",
-        "</div></div>",
+        "<label class='workspace-search-wrap'><span aria-hidden='true'>⌕</span><input id='phonecastMessageSearch' class='workspace-input' type='search' placeholder='Search notifications and conversations...' value='" + escapeHtml(phonecastMessageQuery) + "' autocomplete='off'></label>",
+        "<div class='message-filter-chips' role='group' aria-label='Filter messages'>" + filtersHtml + "</div>",
+        "</div>",
         "<div class='messages-layout'>",
-        "<section class='workspace-card messages-list-card'><div class='workspace-card-heading'><div><span class='workspace-eyebrow'>RECENT</span><h3>Notifications and chats</h3></div><span class='integration-pill pending'>NOTIFICATION ACCESS</span></div>",
-        "<div class='workspace-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>▤</div><strong>Waiting for phone notifications</strong><p>After notification access is connected, supported messages will appear here. Replies will be enabled only when the source notification exposes a reply action.</p><button type='button' class='workspace-secondary-button' data-phonecast-action='enable-notifications'>SET UP NOTIFICATION ACCESS</button></div></section>",
-        "<section class='workspace-card message-conversation-card'><div class='conversation-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>↗</div><strong>Select a conversation</strong><p>Choose a message to read its available preview and reply when supported.</p></div>",
-        "<div class='message-reply-composer'><input class='workspace-input' type='text' placeholder='Reply requires a supported notification action' disabled aria-label='Reply to selected notification'><button type='button' class='workspace-primary-button' disabled title='Reply integration is not connected yet' aria-label='Send reply'>➤</button></div></section>",
+        "<section class='workspace-card messages-list-card'><div class='workspace-card-heading'><div><span class='workspace-eyebrow'>RECENT · " + allNotifications.length + "</span><h3>Notifications</h3></div><span class='integration-pill " + (allNotifications.length ? "reply-available" : "pending") + "'>" + (allNotifications.length ? "SYNCED" : "NO DATA") + "</span></div>",
+        "<div class='phonecast-notification-list'>" + notificationListHtml + "</div></section>",
+        "<section class='workspace-card message-conversation-card'>" + conversationHtml + "</section>",
         "</div></div>"
     ].join("");
 }
@@ -2402,11 +2578,91 @@ function setupPhonecastWorkspaceContentEvents() {
 
     host.querySelectorAll("[data-message-filter]").forEach(function (button) {
         button.addEventListener("click", function () {
-            host.querySelectorAll("[data-message-filter]").forEach(function (item) {
-                var selected = item === button;
-                item.classList.toggle("active", selected);
-                item.setAttribute("aria-pressed", String(selected));
-            });
+            phonecastMessageFilter = button.dataset.messageFilter || "all";
+            renderPhonecastWorkspaceContent();
+        });
+    });
+
+    var messageSearch = document.getElementById("phonecastMessageSearch");
+    messageSearch?.addEventListener("input", function () {
+        var cursorPosition = messageSearch.selectionStart;
+        phonecastMessageQuery = messageSearch.value;
+        renderPhonecastWorkspaceContent();
+        var nextInput = document.getElementById("phonecastMessageSearch");
+        nextInput?.focus();
+        if (nextInput && cursorPosition !== null) {
+            nextInput.setSelectionRange(cursorPosition, cursorPosition);
+        }
+    });
+
+    host.querySelectorAll("[data-notification-select]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            try {
+                activePhonecastMessageKey = decodeURIComponent(
+                    button.dataset.notificationSelect || ""
+                );
+            } catch (_) {
+                activePhonecastMessageKey = "";
+            }
+            state.phoneActionStatus = null;
+            renderPhonecastWorkspaceContent();
+        });
+    });
+
+    host.querySelectorAll("[data-message-action]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            var action = button.dataset.messageAction;
+            var notificationKey = "";
+            try {
+                notificationKey = decodeURIComponent(
+                    button.dataset.notificationKey || ""
+                );
+            } catch (_) {
+                notificationKey = "";
+            }
+
+            if (!notificationKey || !["reply", "dismiss"].includes(action)) {
+                return;
+            }
+
+            if (action === "reply") {
+                var replyInput = document.getElementById("phonecastReplyText");
+                var replyText = replyInput?.value.trim() || "";
+                if (!replyText) {
+                    phonecastWorkspaceNotice = "Write a reply first.";
+                    renderPhonecastWorkspaceContent();
+                    return;
+                }
+
+                state.phoneActionStatus = {
+                    action: "REPLY_NOTIFICATION",
+                    notificationKey: notificationKey,
+                    success: false,
+                    message: "Sending reply through the notification action..."
+                };
+
+                void sendRemoteInput({
+                    type: "PHONE_ACTION",
+                    action: "REPLY_NOTIFICATION",
+                    notificationKey: notificationKey,
+                    text: replyText
+                });
+            } else {
+                state.phoneActionStatus = {
+                    action: "DISMISS_NOTIFICATION",
+                    notificationKey: notificationKey,
+                    success: false,
+                    message: "Dismissing notification..."
+                };
+
+                void sendRemoteInput({
+                    type: "PHONE_ACTION",
+                    action: "DISMISS_NOTIFICATION",
+                    notificationKey: notificationKey
+                });
+            }
+
+            renderPhonecastWorkspaceContent();
         });
     });
 
@@ -2470,6 +2726,9 @@ export function showCastingPage() {
     phonecastDialNumber = "";
     phonecastWorkspaceNotice = "";
     phonecastSettingsQuery = "";
+    phonecastMessageQuery = "";
+    phonecastMessageFilter = "all";
+    activePhonecastMessageKey = "";
 
     app.innerHTML = [
         "<div class='casting-page phonecast-control-centre' id='castingPage'>",
@@ -2536,6 +2795,18 @@ export function showCastingPage() {
             setPhonecastWorkspace(button.dataset.phonecastWorkspace || "calls");
         });
     });
+
+    if (!phonecastNotificationListenerRegistered) {
+        window.addEventListener("phonecast-notifications-updated", function () {
+            if (
+                state.currentPage === "casting" &&
+                activePhonecastWorkspace === "messages"
+            ) {
+                renderPhonecastWorkspaceContent();
+            }
+        });
+        phonecastNotificationListenerRegistered = true;
+    }
 
     renderPhonecastWorkspaceContent();
     initializeVideoViewerSafely();
