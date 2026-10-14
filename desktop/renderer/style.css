@@ -36,7 +36,7 @@
         #ff4f69;
 
     --white:
-        #f4f8fc;
+        #f4e5cf;
 
     --text:
         #EFE5D8;
@@ -542,7 +542,7 @@ img {
         18px;
 
     background:
-        rgba(6,19,30,.84);
+        rgba(27,21,16,.84);
 
     box-shadow:
         var(--shadow);
@@ -780,7 +780,7 @@ img {
         var(--muted);
 
     background:
-        rgba(8,19,30,.7);
+        rgba(21,16,12,.7);
 
     font-size:
         18px;
@@ -816,7 +816,7 @@ img {
         22px;
 
     background:
-        rgba(8,19,30,.88);
+        rgba(21,16,12,.88);
 
     box-shadow:
         var(--shadow);
@@ -968,7 +968,7 @@ img {
         white;
 
     background:
-        rgba(3,10,17,.7);
+        rgba(14,11,9,.7);
 
     font-size:
         13px;
@@ -1411,7 +1411,7 @@ img {
         linear-gradient(
             100deg,
             rgba(215,164,91,.04),
-            rgba(0,10,20,.14)
+            rgba(14,11,9,.14)
         );
 }
 
@@ -1565,8 +1565,8 @@ img {
     background:
         linear-gradient(
             145deg,
-            rgba(12,31,48,.88),
-            rgba(8,19,30,.80)
+            rgba(27,21,16,.88),
+            rgba(21,16,12,.80)
         );
 
     box-shadow:
@@ -2259,7 +2259,7 @@ img {
         hidden;
 
     background:
-        #01050a;
+        #080605;
 
     color:
         var(--white);
@@ -2822,7 +2822,7 @@ img {
         12px;
 
     background:
-        rgba(7,18,29,.8);
+        rgba(27, 21, 16,.8);
 }
 
 
@@ -3150,12 +3150,12 @@ img {
    ============================================================ */
 
 .phonecast-control-centre {
-    --pc-panel: #071521;
-    --pc-panel-raised: #0b1c2a;
-    --pc-panel-soft: #0d2130;
-    --pc-line: rgba(67, 171, 225, .19);
+    --pc-panel: #1b1510;
+    --pc-panel-raised: #211912;
+    --pc-panel-soft: #2a2118;
+    --pc-line: rgba(215, 164, 91, .19);
     --pc-line-strong: rgba(215, 164, 91, .52);
-    --pc-muted: #8ea6b8;
+    --pc-muted: #b5a594;
     --pc-blue: #D7A45B;
     --pc-blue-soft: rgba(215, 164, 91, .12);
 }
@@ -3209,7 +3209,7 @@ img {
     height: 100%;
     border-color: var(--pc-line);
     border-radius: 14px;
-    background: #02070c;
+    background: #080605;
 }
 
 .phonecast-preview-column #phoneCastVideoCanvas {
@@ -3225,7 +3225,7 @@ img {
     padding: 12px;
     border: 1px solid var(--pc-line);
     border-radius: 13px;
-    background: linear-gradient(150deg, rgba(10, 28, 42, .96), rgba(4, 13, 21, .98));
+    background: linear-gradient(150deg, rgba(27, 21, 16, .96), rgba(14, 11, 9, .98));
 }
 
 .preview-controls-heading,
@@ -3244,7 +3244,7 @@ img {
 .preview-controls-heading strong {
     display: block;
     margin-top: 3px;
-    color: #edf7ff;
+    color: #f4e5cf;
     font-size: 12px;
 }
 
@@ -3312,7 +3312,7 @@ img {
     padding: 0 5px;
     border: 1px solid var(--pc-line);
     border-radius: 7px;
-    color: #b5c9d8;
+    color: #b5a594;
     background: rgba(215, 164, 91, .045);
     font-size: 8px;
     font-weight: 800;
@@ -3327,7 +3327,7 @@ img {
 
 .phonecast-control-centre .preview-mode-switch button[aria-pressed="true"] {
     border-color: var(--pc-line-strong);
-    color: #eef9ff;
+    color: #f4e5cf;
     background: rgba(215, 164, 91, .17);
     box-shadow: inset 0 0 0 1px rgba(215, 164, 91, .08);
 }
@@ -3344,7 +3344,7 @@ img {
     grid-template-columns: minmax(0, 1.25fr) minmax(0, .8fr) minmax(0, .8fr);
     gap: 7px;
     padding-top: 9px;
-    border-top: 1px solid rgba(117, 170, 204, .12);
+    border-top: 1px solid rgba(181, 165, 148, .12);
 }
 
 .preview-device-details > div {
@@ -3368,7 +3368,7 @@ img {
 .preview-device-details strong {
     display: block;
     overflow: hidden;
-    color: #dcebf6;
+    color: #f4e5cf;
     font-size: 9px;
     font-weight: 700;
     text-overflow: ellipsis;
@@ -3392,7 +3392,7 @@ img {
     padding: 6px;
     border: 1px solid var(--pc-line);
     border-radius: 12px;
-    background: rgba(4, 14, 23, .97);
+    background: rgba(27, 21, 16, .97);
 }
 
 .phonecast-module-tab {
@@ -3405,7 +3405,7 @@ img {
     padding: 0 9px;
     border: 1px solid transparent;
     border-radius: 8px;
-    color: #9eb4c5;
+    color: #b5a594;
     background: transparent;
     font-size: 11px;
     cursor: pointer;
@@ -3443,11 +3443,11 @@ img {
     min-height: 0;
     overflow: auto;
     overscroll-behavior: contain;
-    scrollbar-color: rgba(68, 130, 166, .36) transparent;
+    scrollbar-color: rgba(130, 115, 99, .36) transparent;
     scrollbar-width: thin;
     border: 1px solid var(--pc-line);
     border-radius: 14px;
-    background: linear-gradient(155deg, rgba(9, 25, 38, .98), rgba(3, 12, 20, .99));
+    background: linear-gradient(155deg, rgba(27, 21, 16, .98), rgba(27, 21, 16, .99));
 }
 
 .workspace-view {
@@ -3468,7 +3468,7 @@ img {
 
 .workspace-view-header h2 {
     margin: 5px 0 4px;
-    color: #f0f8ff;
+    color: #f4e5cf;
     font-size: 22px;
     font-weight: 800;
     letter-spacing: -.4px;
@@ -3489,7 +3489,7 @@ img {
     flex: 0 0 auto;
     border: 1px solid var(--pc-line);
     border-radius: 12px;
-    color: #65caff;
+    color: #b5a594;
     background: rgba(215, 164, 91, .07);
     font-size: 22px;
 }
@@ -3501,9 +3501,9 @@ img {
 }
 
 .phoney-icon {
-    color: #b39cff;
-    background: rgba(154, 118, 255, .08);
-    border-color: rgba(154, 118, 255, .22);
+    color: #f4e5cf;
+    background: rgba(181, 165, 148, .08);
+    border-color: rgba(181, 165, 148, .22);
 }
 
 .settings-icon {
@@ -3524,7 +3524,7 @@ img {
     padding: 5px;
     border: 1px solid var(--pc-line);
     border-radius: 10px;
-    background: rgba(3, 12, 20, .78);
+    background: rgba(27, 21, 16, .78);
 }
 
 .workspace-subtab {
@@ -3532,7 +3532,7 @@ img {
     padding: 0 13px;
     border: 1px solid transparent;
     border-radius: 7px;
-    color: #9db3c4;
+    color: #b5a594;
     background: transparent;
     font-size: 9px;
     font-weight: 800;
@@ -3560,9 +3560,9 @@ img {
 .workspace-card {
     min-width: 0;
     padding: 15px;
-    border: 1px solid rgba(68, 151, 197, .17);
+    border: 1px solid rgba(130, 115, 99, .17);
     border-radius: 12px;
-    background: linear-gradient(150deg, rgba(14, 33, 48, .92), rgba(7, 20, 31, .93));
+    background: linear-gradient(150deg, rgba(27, 21, 16, .92), rgba(27, 21, 16, .93));
 }
 
 .workspace-card-heading {
@@ -3571,7 +3571,7 @@ img {
 
 .workspace-card-heading h3 {
     margin: 4px 0 0;
-    color: #eaf5ff;
+    color: #f4e5cf;
     font-size: 14px;
     font-weight: 800;
 }
@@ -3588,18 +3588,18 @@ img {
     min-width: 0;
     height: 38px;
     padding: 0 12px;
-    border: 1px solid rgba(95, 147, 179, .24);
+    border: 1px solid rgba(130, 115, 99, .24);
     border-radius: 8px;
     outline: none;
-    color: #eaf5ff;
-    background: rgba(2, 10, 17, .72);
+    color: #f4e5cf;
+    background: rgba(27, 21, 16, .72);
     font: inherit;
     font-size: 11px;
     transition: border-color .15s ease, box-shadow .15s ease;
 }
 
 .workspace-input::placeholder {
-    color: #6f899d;
+    color: #827363;
     opacity: 1;
 }
 
@@ -3609,9 +3609,9 @@ img {
 }
 
 .workspace-input:disabled {
-    color: #71889a;
+    color: #827363;
     cursor: not-allowed;
-    background: rgba(2, 10, 17, .45);
+    background: rgba(27, 21, 16, .45);
 }
 
 .dial-number-input {
@@ -3636,10 +3636,10 @@ img {
     gap: 3px;
     min-width: 0;
     min-height: 52px;
-    border: 1px solid rgba(90, 145, 177, .17);
+    border: 1px solid rgba(130, 115, 99, .17);
     border-radius: 9px;
-    color: #edf7ff;
-    background: linear-gradient(145deg, rgba(24, 44, 59, .9), rgba(9, 24, 37, .95));
+    color: #f4e5cf;
+    background: linear-gradient(145deg, rgba(27, 21, 16, .9), rgba(27, 21, 16, .95));
     cursor: pointer;
     transition: border-color .15s ease, background .15s ease, transform .08s ease;
 }
@@ -3651,7 +3651,7 @@ img {
 }
 
 .dialpad-key span {
-    color: #8ba6b8;
+    color: #b5a594;
     font-size: 8px;
     letter-spacing: 1px;
 }
@@ -3682,7 +3682,7 @@ img {
     padding: 0 12px;
     border: 1px solid var(--pc-line);
     border-radius: 8px;
-    color: #d9edf9;
+    color: #f4e5cf;
     background: rgba(215, 164, 91, .06);
     font-size: 9px;
     font-weight: 800;
@@ -3693,8 +3693,8 @@ img {
 .workspace-primary-button {
     border-color: rgba(215, 164, 91, .62);
     color: #ffffff;
-    background: linear-gradient(100deg, #078ce8, #04b0f0);
-    box-shadow: 0 5px 15px rgba(0, 137, 232, .12);
+    background: linear-gradient(100deg, #b97d3e, #f0c785);
+    box-shadow: 0 5px 15px rgba(215, 164, 91, .12);
 }
 
 .call-action-button {
@@ -3748,14 +3748,14 @@ img {
     height: 48px;
     border: 1px solid rgba(215, 164, 91, .22);
     border-radius: 14px;
-    color: #4dbfff;
+    color: #b5a594;
     background: rgba(215, 164, 91, .07);
     font-size: 23px;
 }
 
 .workspace-empty-state strong,
 .conversation-empty-state strong {
-    color: #dcebf6;
+    color: #f4e5cf;
     font-size: 12px;
 }
 
@@ -3773,7 +3773,7 @@ img {
     align-items: center;
     gap: 7px;
     padding-top: 10px;
-    border-top: 1px solid rgba(117, 170, 204, .12);
+    border-top: 1px solid rgba(181, 165, 148, .12);
     color: var(--pc-muted);
     font-size: 9px;
     line-height: 1.5;
@@ -3791,10 +3791,10 @@ img {
     gap: 8px;
     min-width: 0;
     padding-left: 10px;
-    border: 1px solid rgba(95, 147, 179, .24);
+    border: 1px solid rgba(130, 115, 99, .24);
     border-radius: 8px;
-    color: #7fbce0;
-    background: rgba(2, 10, 17, .72);
+    color: #b5a594;
+    background: rgba(27, 21, 16, .72);
 }
 
 .workspace-search-wrap > span {
@@ -3819,7 +3819,7 @@ img {
     padding: 0 10px;
     border: 1px solid var(--pc-line);
     border-radius: 7px;
-    color: #a0b6c6;
+    color: #b5a594;
     background: rgba(215, 164, 91, .035);
     font-size: 8px;
     font-weight: 800;
@@ -3895,9 +3895,9 @@ img {
     width: 92px;
     height: 92px;
     margin-bottom: 7px;
-    border: 1px solid rgba(119, 141, 255, .6);
+    border: 1px solid rgba(181, 165, 148, .6);
     border-radius: 30px;
-    color: #c8bdff;
+    color: #f4e5cf;
     background: radial-gradient(circle at 34% 26%, rgba(215, 164, 91, .27), rgba(154, 110, 61, .10) 52%, rgba(20, 14, 10, .96));
     box-shadow: 0 0 32px rgba(194, 134, 64, .16), inset 0 0 25px rgba(215, 164, 91, .09);
     font-size: 35px;
@@ -3905,7 +3905,7 @@ img {
 
 .phoney-welcome h3 {
     margin: 0;
-    color: #f0f8ff;
+    color: #f4e5cf;
     font-size: 20px;
 }
 
@@ -3931,16 +3931,16 @@ img {
     gap: 2px 8px;
     min-height: 58px;
     padding: 10px;
-    border: 1px solid rgba(90, 145, 177, .17);
+    border: 1px solid rgba(130, 115, 99, .17);
     border-radius: 9px;
-    color: #99adbc;
-    background: rgba(8, 21, 32, .75);
+    color: #b5a594;
+    background: rgba(27, 21, 16, .75);
     text-align: left;
 }
 
 .phoney-suggestion > span {
     grid-row: span 2;
-    color: #8ba8ff;
+    color: #b5a594;
     font-size: 18px;
 }
 
@@ -3950,7 +3950,7 @@ img {
 }
 
 .phoney-suggestion small {
-    color: #748b9c;
+    color: #827363;
     font-size: 8px;
 }
 
@@ -3959,7 +3959,7 @@ img {
     grid-template-columns: minmax(0, 1fr) 40px;
     gap: 8px;
     padding-top: 14px;
-    border-top: 1px solid rgba(117, 170, 204, .12);
+    border-top: 1px solid rgba(181, 165, 148, .12);
 }
 
 .phoney-composer .workspace-primary-button {
@@ -3985,10 +3985,10 @@ img {
     min-width: 0;
     min-height: 68px;
     padding: 10px;
-    border: 1px solid rgba(90, 145, 177, .17);
+    border: 1px solid rgba(130, 115, 99, .17);
     border-radius: 9px;
-    color: #d9e8f3;
-    background: rgba(10, 26, 39, .82);
+    color: #f4e5cf;
+    background: rgba(27, 21, 16, .82);
     text-align: left;
     cursor: pointer;
     transition: border-color .15s ease, background .15s ease;
@@ -4005,7 +4005,7 @@ img {
     width: 32px;
     height: 32px;
     border-radius: 9px;
-    color: #51c1ff;
+    color: #b5a594;
     background: rgba(215, 164, 91, .08);
     font-size: 17px;
 }
@@ -4019,7 +4019,7 @@ img {
 
 .settings-category-copy strong {
     overflow: hidden;
-    color: #dcebf6;
+    color: #f4e5cf;
     font-size: 10px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -4034,7 +4034,7 @@ img {
 }
 
 .settings-category-arrow {
-    color: #66869d;
+    color: #827363;
     font-size: 18px;
 }
 
@@ -4190,8 +4190,8 @@ img {
     flex-direction: column;
     min-height: 0;
     overflow: auto;
-    border-top: 1px solid rgba(117, 170, 204, .11);
-    scrollbar-color: rgba(68, 130, 166, .36) transparent;
+    border-top: 1px solid rgba(181, 165, 148, .11);
+    scrollbar-color: rgba(130, 115, 99, .36) transparent;
     scrollbar-width: thin;
 }
 
@@ -4204,9 +4204,9 @@ img {
     min-width: 0;
     padding: 12px 5px;
     border: 0;
-    border-bottom: 1px solid rgba(117, 170, 204, .10);
+    border-bottom: 1px solid rgba(181, 165, 148, .10);
     border-radius: 0;
-    color: #dbeaf5;
+    color: #f4e5cf;
     background: transparent;
     text-align: left;
     cursor: pointer;
@@ -4229,7 +4229,7 @@ img {
     height: 34px;
     border: 1px solid rgba(215, 164, 91, .25);
     border-radius: 11px;
-    color: #eaf7ff;
+    color: #f4e5cf;
     background: linear-gradient(145deg, rgba(215, 164, 91, .23), rgba(215, 164, 91, .055));
     font-size: 13px;
     font-weight: 800;
@@ -4252,7 +4252,7 @@ img {
 
 .notification-row-top strong {
     overflow: hidden;
-    color: #a9c5d7;
+    color: #b5a594;
     font-size: 9px;
     font-weight: 700;
     text-overflow: ellipsis;
@@ -4261,13 +4261,13 @@ img {
 
 .notification-row-top time {
     flex: 0 0 auto;
-    color: #718ea3;
+    color: #827363;
     font-size: 8px;
 }
 
 .notification-row-title {
     overflow: hidden;
-    color: #e5f2fb;
+    color: #f4e5cf;
     font-size: 11px;
     font-weight: 800;
     line-height: 1.4;
@@ -4278,7 +4278,7 @@ img {
 .notification-row-preview {
     display: -webkit-box;
     overflow: hidden;
-    color: #8fa7b8;
+    color: #b5a594;
     font-size: 10px;
     line-height: 1.45;
     -webkit-box-orient: vertical;
@@ -4302,24 +4302,24 @@ img {
     align-items: flex-start;
     gap: 5px;
     padding-bottom: 12px;
-    border-bottom: 1px solid rgba(117, 170, 204, .12);
+    border-bottom: 1px solid rgba(181, 165, 148, .12);
 }
 
 .message-detail-heading h3 {
     margin: 0;
-    color: #eef7ff;
+    color: #f4e5cf;
     font-size: 15px;
     line-height: 1.35;
 }
 
 .message-detail-heading time {
-    color: #7894a8;
+    color: #b5a594;
     font-size: 9px;
 }
 
 .message-detail-body {
     min-height: 120px;
-    color: #c5d8e6;
+    color: #f4e5cf;
     font-size: 11px;
     line-height: 1.65;
     overflow-wrap: anywhere;
@@ -4337,7 +4337,7 @@ img {
     justify-content: space-between;
     gap: 8px;
     padding-top: 10px;
-    border-top: 1px solid rgba(117, 170, 204, .12);
+    border-top: 1px solid rgba(181, 165, 148, .12);
 }
 
 .integration-pill.reply-available {
