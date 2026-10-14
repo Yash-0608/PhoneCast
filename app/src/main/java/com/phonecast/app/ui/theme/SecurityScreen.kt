@@ -60,6 +60,15 @@ fun SecurityScreen(
             )
     ) {
 
+        Image(
+            painter = painterResource(id = R.drawable.phonecast_warm_mountains),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.15f),
+            contentScale = ContentScale.Crop
+        )
+
         /*
          * -----------------------------------------------------
          * BACKGROUND GLOW
