@@ -125,7 +125,7 @@ export function showWelcomePage() {
                         <div class="feature-item">
 
                             <div class="feature-icon">
-                                ◉
+                                ${phonecastGlyph("wifi", 22)}
                             </div>
 
                             <div class="feature-title">
@@ -145,7 +145,7 @@ export function showWelcomePage() {
                         <div class="feature-item">
 
                             <div class="feature-icon">
-                                ◇
+                                ${phonecastGlyph("lock", 22)}
                             </div>
 
                             <div class="feature-title">
@@ -165,7 +165,7 @@ export function showWelcomePage() {
                         <div class="feature-item">
 
                             <div class="feature-icon">
-                                ♙
+                                ${phonecastGlyph("shield", 22)}
                             </div>
 
                             <div class="feature-title">
@@ -188,7 +188,7 @@ export function showWelcomePage() {
                         GET STARTED
 
                         <span>
-                            →
+                            ${phonecastGlyph("arrow", 17)}
                         </span>
                     </button>
 
@@ -1032,7 +1032,7 @@ export function showHomePage() {
                         class="sidebar-item active"
                         data-page="home"
                     >
-                        <span>⌂</span>
+                        <span>${phonecastGlyph("home", 18)}</span>
                         Home
                     </button>
 
@@ -1041,7 +1041,7 @@ export function showHomePage() {
                         class="sidebar-item"
                         data-page="history"
                     >
-                        <span>◷</span>
+                        <span>${phonecastGlyph("history", 18)}</span>
                         History
                     </button>
 
@@ -1050,7 +1050,7 @@ export function showHomePage() {
                         class="sidebar-item"
                         data-page="settings"
                     >
-                        <span>⚙</span>
+                        <span>${phonecastGlyph("settings", 18)}</span>
                         Settings
                     </button>
 
@@ -1150,7 +1150,7 @@ export function showHomePage() {
                                 title="Search for devices"
                                 ${state.searching ? "disabled" : ""}
                             >
-                                ↻
+                                ${phonecastGlyph("refresh", 17)}
                             </button>
 
                         </div>
@@ -1384,7 +1384,7 @@ function renderHistory() {
             <div class="empty-history">
 
                 <span>
-                    ◷
+                    ${phonecastGlyph("history", 22)}
                 </span>
 
                 <strong>
@@ -1922,7 +1922,7 @@ export function showSettingsPage() {
                     <div class="panel setting-card">
 
                         <div class="setting-icon">
-                            ▣
+                            ${phonecastGlyph("screen", 22)}
                         </div>
 
                         <div>
@@ -1951,7 +1951,7 @@ export function showSettingsPage() {
                     <div class="panel setting-card">
 
                         <div class="setting-icon">
-                            ◇
+                            ${phonecastGlyph("wifi", 22)}
                         </div>
 
                         <div>
@@ -1977,7 +1977,7 @@ export function showSettingsPage() {
                     <div class="panel setting-card">
 
                         <div class="setting-icon">
-                            ◈
+                            ${phonecastGlyph("shield", 22)}
                         </div>
 
                         <div>
@@ -2047,7 +2047,7 @@ function renderSidebar(
                     "
                     data-page="home"
                 >
-                    <span>⌂</span>
+                    <span>${phonecastGlyph("home", 18)}</span>
                     Home
                 </button>
 
@@ -2060,7 +2060,7 @@ function renderSidebar(
                     "
                     data-page="history"
                 >
-                    <span>◷</span>
+                    <span>${phonecastGlyph("history", 18)}</span>
                     History
                 </button>
 
@@ -2073,7 +2073,7 @@ function renderSidebar(
                     "
                     data-page="settings"
                 >
-                    <span>⚙</span>
+                    <span>${phonecastGlyph("settings", 18)}</span>
                     Settings
                 </button>
 
@@ -2158,7 +2158,9 @@ function phonecastGlyph(name, size = 18) {
         apps: "<rect x='3' y='3' width='7' height='7' rx='1.5'/><rect x='14' y='3' width='7' height='7' rx='1.5'/><rect x='3' y='14' width='7' height='7' rx='1.5'/><rect x='14' y='14' width='7' height='7' rx='1.5'/>",
         volume: "<path d='M4 10v4h4l5 4V6l-5 4H4Z'/><path d='M16 9a5 5 0 0 1 0 6M18.5 6.5a9 9 0 0 1 0 11'/>",
         lock: "<rect x='4' y='10' width='16' height='12' rx='2'/><path d='M8 10V7a4 4 0 0 1 8 0v3M12 14v4'/>",
-        arrow: "<path d='m9 18 6-6-6-6'/>"
+        arrow: "<path d='m9 18 6-6-6-6'/>",
+        refresh: "<path d='M20 7v5h-5'/><path d='M4.9 9a7.5 7.5 0 0 1 12.4-2.8L20 12M4 17v-5h5'/><path d='M19.1 15a7.5 7.5 0 0 1-12.4 2.8L4 12'/>",
+        person: "<circle cx='12' cy='8' r='4'/><path d='M4 21a8 8 0 0 1 16 0'/>"
     };
     return "<svg class='phonecast-glyph' width='" + size + "' height='" + size +
         "' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.7' " +
@@ -2225,19 +2227,19 @@ function renderPhonecastCallsWorkspace() {
             "<div class='dialer-actions'>",
             "<button type='button' class='workspace-secondary-button' data-dial-action='clear'>CLEAR</button>",
             "<button type='button' class='workspace-secondary-button' data-dial-action='backspace' aria-label='Delete last digit'>⌫</button>",
-            "<button type='button' class='workspace-primary-button call-action-button' data-dial-action='call'><span aria-hidden='true'>☎</span> CALL</button>",
+            "<button type='button' class='workspace-primary-button call-action-button' data-dial-action='call'><span aria-hidden='true'>" + phonecastGlyph("call", 16) + "</span> CALL</button>",
             "</div>",
             "<p class='workspace-inline-status " + (phonecastWorkspaceNotice ? "" : "hidden") + "' id='phonecastCallNotice' role='status'>" + escapeHtml(phonecastWorkspaceNotice) + "</p>",
             "</section>",
             "<section class='workspace-card call-side-card'><div class='workspace-card-heading'><div><span class='workspace-eyebrow'>CALLING</span><h3>From PhoneCast</h3></div></div>",
-            "<div class='workspace-empty-state compact-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>☎</div><strong>Calls use your connected phone</strong><p>Dialer launching is the first calling integration. Call history, saved contacts and in-call audio controls will be connected in subsequent steps.</p></div>",
+            "<div class='workspace-empty-state compact-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>" + phonecastGlyph("call", 24) + "</div><strong>Calls use your connected phone</strong><p>Dialer launching is the first calling integration. Call history, saved contacts and in-call audio controls will be connected in subsequent steps.</p></div>",
             "<div class='workspace-feature-row'><span class='feature-status-dot'></span><span>Calls use your phone's SIM and carrier.</span></div></section></div>"
         ].join("");
     } else if (activePhonecastCallView === "recent") {
         callContent = [
             "<section class='workspace-card workspace-full-card'>",
             "<div class='workspace-card-heading'><div><span class='workspace-eyebrow'>CALL ACTIVITY</span><h3>Recent calls</h3></div><span class='integration-pill pending'>INTEGRATION REQUIRED</span></div>",
-            "<div class='workspace-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>◷</div><strong>Call history hasn't synced yet</strong><p>PhoneCast needs Android call-log access before it can show real recent calls here. No sample history is being presented as real data.</p></div>",
+            "<div class='workspace-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>" + phonecastGlyph("history", 24) + "</div><strong>Call history hasn't synced yet</strong><p>PhoneCast needs Android call-log access before it can show real recent calls here. No sample history is being presented as real data.</p></div>",
             "</section>"
         ].join("");
     } else {
@@ -2245,7 +2247,7 @@ function renderPhonecastCallsWorkspace() {
             "<section class='workspace-card workspace-full-card'>",
             "<div class='workspace-card-heading'><div><span class='workspace-eyebrow'>PEOPLE</span><h3>Phone contacts</h3></div><span class='integration-pill pending'>INTEGRATION REQUIRED</span></div>",
             "<input id='phonecastContactSearch' class='workspace-input' type='search' placeholder='Search saved phone contacts...' autocomplete='off'>",
-            "<div class='workspace-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>♙</div><strong>Contact directory isn't connected yet</strong><p>The Android integration will request Contacts permission and load real contacts from your phone.</p></div>",
+            "<div class='workspace-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>" + phonecastGlyph("person", 24) + "</div><strong>Contact directory isn't connected yet</strong><p>The Android integration will request Contacts permission and load real contacts from your phone.</p></div>",
             "</section>"
         ].join("");
     }
@@ -2393,7 +2395,7 @@ function renderPhonecastMessagesWorkspace() {
     } else {
         notificationListHtml = [
             "<div class='workspace-empty-state notification-empty-state'>",
-            "<div class='workspace-empty-icon' aria-hidden='true'>▤</div>",
+            "<div class='workspace-empty-icon' aria-hidden='true'>" + phonecastGlyph("messages", 24) + "</div>",
             "<strong>" + (allNotifications.length ? "No matching notifications" : "Waiting for phone notifications") + "</strong>",
             "<p>" + (allNotifications.length
                 ? "Try another search term or app filter."
@@ -2433,7 +2435,7 @@ function renderPhonecastMessagesWorkspace() {
         ].join("");
     } else {
         conversationHtml = [
-            "<div class='conversation-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>↗</div><strong>Select a notification</strong><p>Choose an item to see its actual preview and reply when the app provides a supported reply action.</p></div>",
+            "<div class='conversation-empty-state'><div class='workspace-empty-icon' aria-hidden='true'>" + phonecastGlyph("messages", 24) + "</div><strong>Select a notification</strong><p>Choose an item to see its actual preview and reply when the app provides a supported reply action.</p></div>",
             "<div class='message-reply-composer'><textarea class='workspace-input' rows='2' placeholder='Select a message to reply' disabled aria-label='Reply unavailable'></textarea><button type='button' class='workspace-primary-button' disabled aria-label='Send reply'>➤</button></div>"
         ].join("");
     }
@@ -2442,7 +2444,7 @@ function renderPhonecastMessagesWorkspace() {
         "<div class='workspace-view messages-workspace'>",
         "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>NOTIFICATION INBOX</span><h2>Messages</h2><p>Phone notifications and supported quick replies.</p></div><div class='workspace-header-icon message-icon' aria-hidden='true'>" + phonecastGlyph("messages", 24) + "</div></header>",
         "<div class='messages-toolbar'>",
-        "<label class='workspace-search-wrap'><span aria-hidden='true'>⌕</span><input id='phonecastMessageSearch' class='workspace-input' type='search' placeholder='Search notifications and conversations...' value='" + escapeHtml(phonecastMessageQuery) + "' autocomplete='off'></label>",
+        "<label class='workspace-search-wrap'><span aria-hidden='true'>" + phonecastGlyph("search", 17) + "</span><input id='phonecastMessageSearch' class='workspace-input' type='search' placeholder='Search notifications and conversations...' value='" + escapeHtml(phonecastMessageQuery) + "' autocomplete='off'></label>",
         "<div class='message-filter-chips' role='group' aria-label='Filter messages'>" + filtersHtml + "</div>",
         "</div>",
         "<div class='messages-layout'>",
@@ -2458,12 +2460,12 @@ function renderPhonecastPhoneyWorkspace() {
         "<div class='workspace-view phoney-workspace'>",
         "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>YOUR PHONE ASSISTANT</span><h2>Phoney</h2><p>An AI workspace for phone tasks. We'll design its actions separately.</p></div><div class='workspace-header-icon phoney-icon' aria-hidden='true'>" + phonecastGlyph("sparkles", 24) + "</div></header>",
         "<section class='workspace-card phoney-chat-card'>",
-        "<div class='phoney-welcome'><div class='phoney-orb' aria-hidden='true'><span>✦</span></div><span class='workspace-eyebrow'>PHONECAST AI</span><h3>Meet Phoney</h3><p>This space is reserved for the assistant experience. No AI actions are simulated yet.</p></div>",
+        "<div class='phoney-welcome'><div class='phoney-orb' aria-hidden='true'><span>" + phonecastGlyph("sparkles", 30) + "</span></div><span class='workspace-eyebrow'>PHONECAST AI</span><h3>Meet Phoney</h3><p>This space is reserved for the assistant experience. No AI actions are simulated yet.</p></div>",
         "<div class='phoney-suggestion-grid'>",
-        "<button type='button' class='phoney-suggestion' disabled><span>▤</span><strong>Summarize notifications</strong><small>Planned</small></button>",
-        "<button type='button' class='phoney-suggestion' disabled><span>☎</span><strong>Help manage calls</strong><small>Planned</small></button>",
-        "<button type='button' class='phoney-suggestion' disabled><span>⌕</span><strong>Find a conversation</strong><small>Planned</small></button>",
-        "<button type='button' class='phoney-suggestion' disabled><span>⚙</span><strong>Change phone settings</strong><small>Planned</small></button>",
+        "<button type='button' class='phoney-suggestion' disabled><span>" + phonecastGlyph("messages", 17) + "</span><strong>Summarize notifications</strong><small>Planned</small></button>",
+        "<button type='button' class='phoney-suggestion' disabled><span>" + phonecastGlyph("call", 17) + "</span><strong>Help manage calls</strong><small>Planned</small></button>",
+        "<button type='button' class='phoney-suggestion' disabled><span>" + phonecastGlyph("search", 17) + "</span><strong>Find a conversation</strong><small>Planned</small></button>",
+        "<button type='button' class='phoney-suggestion' disabled><span>" + phonecastGlyph("settings", 17) + "</span><strong>Change phone settings</strong><small>Planned</small></button>",
         "</div><form class='phoney-composer' id='phonecastPhoneyForm'><input class='workspace-input' type='text' placeholder='Phoney command input will be added after brainstorming...' disabled aria-label='Ask Phoney'><button type='submit' class='workspace-primary-button' disabled aria-label='Send command'>➤</button></form>",
         "</section></div>"
     ].join("");
@@ -2488,7 +2490,7 @@ function renderPhonecastSettingsWorkspace() {
     return [
         "<div class='workspace-view settings-workspace'>",
         "<header class='workspace-view-header'><div><span class='workspace-eyebrow'>CONNECTED ANDROID DEVICE</span><h2>Phone settings</h2><p>Open the corresponding system settings page on your phone.</p></div><div class='workspace-header-icon settings-icon' aria-hidden='true'>" + phonecastGlyph("settings", 24) + "</div></header>",
-        "<label class='workspace-search-wrap settings-search-wrap'><span aria-hidden='true'>⌕</span><input id='phonecastSettingsSearch' class='workspace-input' type='search' placeholder='Search phone settings...' value='" + escapeHtml(phonecastSettingsQuery) + "' autocomplete='off'></label>",
+        "<label class='workspace-search-wrap settings-search-wrap'><span aria-hidden='true'>" + phonecastGlyph("search", 17) + "</span><input id='phonecastSettingsSearch' class='workspace-input' type='search' placeholder='Search phone settings...' value='" + escapeHtml(phonecastSettingsQuery) + "' autocomplete='off'></label>",
         "<div class='settings-category-grid' id='phonecastSettingsGrid'>" + itemsHtml + "</div>",
         (visibleItems.length ? "" : "<div class='workspace-empty-state compact-empty-state'><strong>No matching settings</strong><p>Try another search term.</p></div>"),
         "<p class='workspace-inline-status " + (phonecastWorkspaceNotice ? "" : "hidden") + "' id='phonecastSettingsNotice' role='status'>" + escapeHtml(phonecastWorkspaceNotice) + "</p>",
