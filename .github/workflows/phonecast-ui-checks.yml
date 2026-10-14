@@ -1,6 +1,7 @@
 name: PhoneCast UI and Android Build
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - design/warm-premium-ui
@@ -55,8 +56,21 @@ jobs:
               if (depth < 0) throw new Error('Unexpected closing CSS brace');
             }
             if (depth !== 0) throw new Error('CSS braces are unbalanced');
-            if (/#00a8ff|#19c3ff|#006bb7|rgba\\(\\s*0,\\s*168,\\s*255/i.test(css)) {
-              throw new Error('Legacy neon-blue accent remains in the desktop stylesheet');
+            const legacyCoolPalette = [
+              '#00a8ff', '#19c3ff', '#006bb7', '#078ce8', '#04b0f0',
+              '#071521', '#0b1c2a', '#0d2130', '#8ea6b8',
+              'rgba(67, 171, 225', 'rgba(0, 137, 232'
+            ];
+            const found = legacyCoolPalette.filter(token =>
+              css.toLowerCase().includes(token.toLowerCase())
+            );
+            if (found.length) {
+              throw new Error('Legacy cool-toned palette remains: ' + found.join(', '));
+            }
+            for (const token of ['--pc-panel: #1b1510', '--pc-panel-raised: #211912', '--pc-panel-soft: #2a2118']) {
+              if (!css.toLowerCase().includes(token)) {
+                throw new Error('Missing warm control-centre token: ' + token);
+              }
             }
             console.log('CSS structure and warm palette checks passed.');
           "
