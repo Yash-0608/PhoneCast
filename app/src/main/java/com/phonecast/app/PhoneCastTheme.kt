@@ -48,13 +48,13 @@ object PhoneCastColors {
      */
 
     val Card =
-        Color(0xFF17120D)
+        Color(0xE617120D)
 
     val CardSecondary =
-        Color(0xFF211810)
+        Color(0xE6211810)
 
     val CardElevated =
-        Color(0xFF2A1E14)
+        Color(0xED2A1E14)
 
 
     /*
