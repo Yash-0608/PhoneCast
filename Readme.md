@@ -1,4 +1,4 @@
-# PhoneCast
+# PhoneCast : The Screen Share set up
 
 **Wireless Android Screen Sharing & Remote Control over Local Network**
 
