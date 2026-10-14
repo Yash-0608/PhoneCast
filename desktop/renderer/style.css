@@ -4732,3 +4732,71 @@ body {
     background: linear-gradient(110deg, #D7A45B, #F6DDAA);
 }
 
+
+
+/* Crisp alignment for custom SVG glyphs on every desktop screen. */
+.feature-icon,
+.setting-icon {
+    display: grid;
+    place-items: center;
+}
+
+.feature-icon .phonecast-glyph {
+    width: 23px;
+    height: 23px;
+    filter: drop-shadow(0 0 7px rgba(215, 164, 91, .16));
+}
+
+.sidebar-item span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-item span .phonecast-glyph {
+    width: 18px;
+    height: 18px;
+}
+
+.icon-button {
+    display: inline-grid;
+    place-items: center;
+}
+
+.icon-button .phonecast-glyph {
+    width: 17px;
+    height: 17px;
+}
+
+.empty-history > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #E8B977;
+}
+
+.setting-icon .phonecast-glyph {
+    width: 22px;
+    height: 22px;
+}
+
+.workspace-empty-icon .phonecast-glyph {
+    width: 24px;
+    height: 24px;
+}
+
+.phoney-orb > span {
+    display: grid;
+    place-items: center;
+}
+
+.phoney-orb > span .phonecast-glyph {
+    width: 30px;
+    height: 30px;
+}
+
+.phoney-suggestion > span .phonecast-glyph {
+    width: 17px;
+    height: 17px;
+}
+
