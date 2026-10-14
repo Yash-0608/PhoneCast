@@ -267,7 +267,7 @@ img {
     background:
         linear-gradient(
             100deg,
-            #078df0,
+            #B97D3E,
             #F0C785
         );
 
@@ -323,7 +323,7 @@ img {
         linear-gradient(
             115deg,
             #0E0B09 0%,
-            #031322 54%,
+            #1B1510 54%,
             #0E0B09 100%
         );
 }
@@ -1075,8 +1075,8 @@ img {
     background:
         linear-gradient(
             180deg,
-            rgba(5,18,31,.9),
-            rgba(4,12,20,.72)
+            rgba(22, 16, 11, .9),
+            rgba(11, 8, 6, .72)
         );
 
     box-shadow:
@@ -1705,7 +1705,7 @@ img {
         white;
 
     background:
-        rgba(4,12,20,.6);
+        rgba(11, 8, 6, .6);
 
     text-align:
         left;
@@ -2291,7 +2291,7 @@ img {
         rgba(215,164,91,.15);
 
     background:
-        rgba(4,12,20,.95);
+        rgba(11, 8, 6, .95);
 }
 
 
@@ -2626,7 +2626,7 @@ img {
 .casting-header {
 
     background:
-        rgba(4,12,20,.72);
+        rgba(11, 8, 6, .72);
 }
 
 
