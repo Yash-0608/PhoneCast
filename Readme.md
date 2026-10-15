@@ -57,9 +57,9 @@ PhoneCast is designed for direct communication over a local network. The current
 - Local device security/authentication flow.
 - LAN service advertisement using Android Network Service Discovery (NSD).
 - Incoming connection request with explicit accept/reject.
-- Android \`MediaProjection\` consent before screen capture.
+- Android `MediaProjection` consent before screen capture.
 - Foreground screen-capture service.
-- H.264 video encoding through Android \`MediaCodec\`.
+- H.264 video encoding through Android `MediaCodec`.
 - Video stream served to the desktop over TCP.
 - Local connection-history functionality.
 
@@ -76,7 +76,7 @@ PhoneCast is designed for direct communication over a local network. The current
 
 ### Not currently promised as complete
 
-The following are not complete, production-ready features of the current \`main\` branch:
+The following are not complete, production-ready features of the current `main` branch:
 
 - Full, device-independent touch, pointer, gesture, and keyboard coverage.
 - Calls, reliable call history, or full contact management.
@@ -104,7 +104,7 @@ This table describes the implementation direction, not a guarantee that every fe
 
 ## Architecture
 
-\`\`\`mermaid
+```mermaid
 flowchart LR
     subgraph Android["PhoneCast Android"]
         NSD["NSD service advertisement"]
@@ -134,13 +134,13 @@ flowchart LR
     INPUT_D --> CONTROL_D
     CONTROL_A --> REQUEST
     CONTROL_A --> INPUT
-\`\`\`
+```
 
 ### Connection lifecycle
 
 1. Start PhoneCast on the phone and desktop.
 2. Put both devices on a network that permits local device-to-device traffic.
-3. The Android app advertises the \`_phonecast._tcp\` service.
+3. The Android app advertises the `_phonecast._tcp` service.
 4. The desktop discovers the phone and the user selects it.
 5. The desktop initiates the control connection and sends a connection request.
 6. The phone user accepts or rejects the request.
@@ -171,12 +171,12 @@ The control and video channels are separate so that continuous video traffic doe
 - A network connection that allows the phone and PC to reach each other.
 - Current PhoneCast source from this repository.
 
-The desktop app is built with Electron. The repository currently defines a \`start\` script; it does **not** define a production packaging script in \`desktop/package.json\`.
+The desktop app is built with Electron. The repository currently defines a `start` script; it does **not** define a production packaging script in `desktop/package.json`.
 
 ### Android development
 
 - Android Studio with a compatible Android SDK installation.
-- **Android SDK Platform 36**, matching the current \`compileSdk\`.
+- **Android SDK Platform 36**, matching the current `compileSdk`.
 - JDK 17 or a compatible newer JDK supported by the Gradle/Android Gradle Plugin versions in the repository. Android Studio's configured Gradle JDK can be used.
 - An Android phone running **Android 8.0 (API 26) or later** for device testing.
 - USB debugging enabled if installing/running over USB, or a way to install the generated APK.
@@ -190,39 +190,39 @@ The repository includes the Gradle wrapper, so a separate global Gradle installa
 
 Open PowerShell or a terminal:
 
-\`\`\`powershell
+```powershell
 git clone https://github.com/Yash-0608/PhoneCast.git
 cd PhoneCast
-\`\`\`
+```
 
 ### 2. Install desktop dependencies
 
-\`\`\`powershell
+```powershell
 cd desktop
 npm ci
-\`\`\`
+```
 
-Use \`npm ci\` for a clean install based on the committed lockfile. You normally need to repeat it only when dependencies change or your install is missing/corrupt.
+Use `npm ci` for a clean install based on the committed lockfile. You normally need to repeat it only when dependencies change or your install is missing/corrupt.
 
 ### 3. Start PhoneCast
 
-\`\`\`powershell
+```powershell
 npm start
-\`\`\`
+```
 
-This runs the Electron entry point configured in \`desktop/package.json\`. Keep the terminal open while testing so you can see startup and networking logs.
+This runs the Electron entry point configured in `desktop/package.json`. Keep the terminal open while testing so you can see startup and networking logs.
 
-To restart the desktop app, close it and run \`npm start\` again from the \`desktop\` directory.
+To restart the desktop app, close it and run `npm start` again from the `desktop` directory.
 
 ## Run the Android app
 
 ### Option A — Android Studio
 
 1. Clone the repository if you have not already.
-2. Open **the repository root** (\`PhoneCast/\`) in Android Studio, not just the \`app/\` subfolder. The root contains \`settings.gradle.kts\` and the Gradle wrapper.
+2. Open **the repository root** (`PhoneCast/`) in Android Studio, not just the `app/` subfolder. The root contains `settings.gradle.kts` and the Gradle wrapper.
 3. Allow Gradle sync and SDK installation to finish.
 4. Connect an Android phone with USB debugging enabled, or select a compatible emulator for UI-only development.
-5. Select the \`app\` run configuration and click **Run**.
+5. Select the `app` run configuration and click **Run**.
 6. On the phone, complete onboarding and grant Android permissions when prompted.
 
 A physical phone is recommended for end-to-end LAN discovery and screen-sharing tests. Emulator networking may prevent normal local discovery.
@@ -231,15 +231,15 @@ A physical phone is recommended for end-to-end LAN discovery and screen-sharing 
 
 From the repository root:
 
-\`\`\`powershell
+```powershell
 .\gradlew.bat :app:assembleDebug
-\`\`\`
+```
 
 On macOS/Linux, use:
 
-\`\`\`bash
+```bash
 ./gradlew :app:assembleDebug
-\`\`\`
+```
 
 The first build may take longer while Gradle downloads the required Gradle distribution, plugins, and Android dependencies.
 
@@ -247,31 +247,31 @@ The first build may take longer while Gradle downloads the required Gradle distr
 
 Build the debug APK from the repository root:
 
-\`\`\`powershell
+```powershell
 .\gradlew.bat :app:assembleDebug
-\`\`\`
+```
 
 Expected output:
 
-\`\`\`text
+```text
 app/build/outputs/apk/debug/app-debug.apk
-\`\`\`
+```
 
 Install it on a connected Android device with ADB:
 
-\`\`\`powershell
+```powershell
 adb devices
 adb install -r app\build\outputs\apk\debug\app-debug.apk
-\`\`\`
+```
 
-If the device is not listed by \`adb devices\`, check the USB cable, enable Developer options and USB debugging, and accept the authorization prompt on the phone.
+If the device is not listed by `adb devices`, check the USB cable, enable Developer options and USB debugging, and accept the authorization prompt on the phone.
 
 This is a **debug build**, not a production release. A distributable release requires a deliberate signing and release process. Do not commit signing keys, passwords, or keystore files.
 
 ## Connect a phone and PC
 
 1. Install and open PhoneCast on Android.
-2. Start the desktop app with \`npm start\`.
+2. Start the desktop app with `npm start`.
 3. Connect the phone and PC to the same trusted Wi-Fi/LAN.
 4. Keep the phone unlocked and the app ready for incoming requests.
 5. Refresh or wait for device discovery in the desktop app.
@@ -297,7 +297,7 @@ PhoneCast does not promise that every router, hotspot, VPN, or firewall configur
 ## Security and privacy
 
 - The connection is initiated by the desktop, but the phone user must approve the request.
-- Android's authentication and \`MediaProjection\` consent are handled through Android's system flows; PhoneCast should not bypass them.
+- Android's authentication and `MediaProjection` consent are handled through Android's system flows; PhoneCast should not bypass them.
 - Screen capture and remote input should only be used in sessions the phone user has authorized.
 - The architecture is LAN-first and does not require a PhoneCast cloud relay for the core flow.
 - The current control/video design uses TCP sockets. **Do not assume transport encryption is present.** Use a trusted network and avoid sensitive activity until transport security has been explicitly implemented and verified.
@@ -307,14 +307,14 @@ PhoneCast does not promise that every router, hotspot, VPN, or firewall configur
 
 | Problem | Checks |
 |---|---|
-| Desktop app does not start | Run \`npm ci\` in \`desktop/\`; verify Node.js/npm; read the terminal error; confirm you ran \`npm start\` from \`desktop/\`. |
+| Desktop app does not start | Run `npm ci` in `desktop/`; verify Node.js/npm; read the terminal error; confirm you ran `npm start` from `desktop/`. |
 | Gradle sync/build fails | Open the repository root in Android Studio; verify SDK Platform 36 and JDK/Gradle compatibility; retry after SDK installation completes. |
 | Phone is not discovered | Confirm both devices are on the same LAN; keep PhoneCast open on Android; check VPN, guest Wi-Fi/client isolation, and Windows Firewall. |
 | Phone appears but connection fails | Check the desktop terminal and Android logs; confirm the phone is ready to accept requests; verify local traffic is not blocked. |
 | Request is accepted but no video appears | Grant Android screen-capture consent; inspect capture/encoder logs; verify the video connection can reach the desktop. |
 | Video starts but looks broken or freezes | Check device encoder support, network stability, and Electron/Chromium decoding logs. Test on another trusted network if possible. |
 | Remote input does not work | Test the video path first; confirm the session is authorized; check any PhoneCast accessibility/input service and Android permission requested by the app; note that full input coverage is still in development. |
-| ADB cannot see the phone | Reconnect USB, enable USB debugging, accept the phone's authorization dialog, and run \`adb devices\` again. |
+| ADB cannot see the phone | Reconnect USB, enable USB debugging, accept the phone's authorization dialog, and run `adb devices` again. |
 
 ### Debugging by layer
 
@@ -325,14 +325,14 @@ When diagnosing an issue, isolate the stages in order:
 3. Request — did the phone receive the connection request?
 4. Authorization — did the phone user accept?
 5. Android authentication — did the system authentication step complete?
-6. Capture — was \`MediaProjection\` granted and capture started?
+6. Capture — was `MediaProjection` granted and capture started?
 7. Encoding/video transport — did the H.264 stream become available?
 8. Decode/render — did the desktop decode and display frames?
 9. Input — are remote input events being sent and applied?
 
 ## Repository layout
 
-\`\`\`text
+```text
 PhoneCast/
 ├── app/
 │   └── src/main/
@@ -369,7 +369,7 @@ PhoneCast/
 ├── settings.gradle.kts
 ├── gradle.properties
 └── Readme.md
-\`\`\`
+```
 
 The tree highlights the main entry points; individual files may be added as development progresses.
 
@@ -379,11 +379,11 @@ The tree highlights the main entry points; individual files may be added as deve
 |---|---|---|
 | Android app | Kotlin, Android SDK, Jetpack Compose | Mobile UI and lifecycle |
 | Device discovery | Android NSD / mDNS | Advertise and find devices on the LAN |
-| Screen capture | \`MediaProjection\` | Obtain user-approved display capture |
-| Video encoding | \`MediaCodec\` | Encode the screen as H.264 |
+| Screen capture | `MediaProjection` | Obtain user-approved display capture |
+| Video encoding | `MediaCodec` | Encode the screen as H.264 |
 | Desktop shell | Electron | Windows desktop application |
 | Desktop runtime | Node.js | Networking and native desktop process |
-| Discovery client | \`bonjour-service\` | Discover the Android service |
+| Discovery client | `bonjour-service` | Discover the Android service |
 | Control/video networking | Node TCP sockets and Android networking APIs | Exchange control messages and video |
 | Video decoding | WebCodecs | Decode H.264 frames in the desktop renderer |
 | UI | HTML, CSS, JavaScript | Desktop screens and live viewer |
@@ -401,7 +401,7 @@ The tree highlights the main entry points; individual files may be added as deve
 
 Useful commands:
 
-\`\`\`powershell
+```powershell
 # Desktop: from repository root
 cd desktop
 npm ci
@@ -409,9 +409,9 @@ npm start
 
 # Android: from repository root (run separately)
 .\gradlew.bat :app:assembleDebug
-\`\`\`
+```
 
-Do not commit generated build output, dependency folders, local SDK configuration, or secrets. The repository's \`.gitignore\` covers common Android/Gradle generated files and local configuration.
+Do not commit generated build output, dependency folders, local SDK configuration, or secrets. The repository's `.gitignore` covers common Android/Gradle generated files and local configuration.
 
 ## Known limitations and roadmap
 
@@ -437,7 +437,7 @@ These items are roadmap ideas, not claims about current functionality.
 
 ## License
 
-There is currently no root-level \`LICENSE\` file on the \`main\` branch. The desktop package metadata names MIT, but that alone does not replace a repository license. Until a license is added by the maintainer, do not assume that redistribution or reuse is permitted.
+There is currently no root-level `LICENSE` file on the `main` branch. The desktop package metadata names MIT, but that alone does not replace a repository license. Until a license is added by the maintainer, do not assume that redistribution or reuse is permitted.
 
 ## Maintainer
 
