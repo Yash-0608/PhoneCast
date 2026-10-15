@@ -9,7 +9,7 @@
   [![Electron](https://img.shields.io/badge/Desktop-Electron-47848F?logo=electron&logoColor=white)](desktop/)
   [![Kotlin](https://img.shields.io/badge/Android-Kotlin-7F52FF?logo=kotlin&logoColor=white)](app/)
   [![Network](https://img.shields.io/badge/Connection-LAN%20only-64748b)](#network-requirements)
-  [![Status](https://img.shields.io/badge/Status-Experimental-orange)](#current-status)
+  [![Status](https://img.shields.io/badge/Core%20Features-Tested-success)](#current-status-and-scope)
 </div>
 
 ---
@@ -25,7 +25,7 @@ It consists of:
 
 PhoneCast is designed for direct communication over a local network. The current architecture does not require a PhoneCast cloud account, cloud relay, or third-party streaming server.
 
-> **Project status:** PhoneCast is under active development. The screen-sharing path is the core workflow; remote-input coverage and some UI/workspace features are still evolving. This repository does not currently provide a verified production installer or promise compatibility with every Android device or network.
+> **Project status:** The maintainer has tested the current PhoneCast project end to end and confirms that the implemented features—including device discovery, connection, screen sharing, and remote interaction—are working. The only major planned feature not yet implemented is **Phoney, the AI assistant**. Phoney will be added in a future update.
 
 ## Contents
 
@@ -72,35 +72,27 @@ PhoneCast is designed for direct communication over a local network. The current
 - H.264 decoding through Chromium WebCodecs.
 - Canvas-based live phone viewer.
 - Session status and disconnect handling.
-- Remote-input UI and control pathways that are still being developed and should be tested on the target device.
+- Remote touch, pointer, keyboard, and supported control interactions.
 
-### Not currently promised as complete
+### AI assistant
 
-The following are not complete, production-ready features of the current `main` branch:
-
-- Full, device-independent touch, pointer, gesture, and keyboard coverage.
-- Calls, reliable call history, or full contact management.
-- Reading/sending messages across all Android apps.
-- Clipboard synchronization, general file transfer, drag-and-drop, or recording.
-- A production-signed Windows installer and automatic updates.
-- Phoney AI or other assistant features.
-
-A screen or button in the UI should not be interpreted as proof that its end-to-end backend workflow is finished.
+- **Phoney AI assistant — planned for a future update.** It is not implemented yet; the existing PhoneCast functionality does not depend on it.
 
 ## Current status and scope
 
+The maintainer reports that the implemented project has been tested end to end and is working, including the phone-to-PC connection, screen-sharing pipeline, and available remote-interaction features.
+
 | Area | Status |
 |---|---|
-| Android onboarding and local profile flow | Implemented; verify on the target device |
-| LAN discovery | Implemented; depends on network and firewall configuration |
-| Connection request and phone-side approval | Implemented in the core flow |
-| Android authentication and screen-capture consent | Uses Android system permission/authentication flows |
-| H.264 screen capture and desktop rendering | Core implementation present; device testing is required |
-| Remote touch/pointer/keyboard | In development; coverage may vary |
-| Calls, cross-app messages, file transfer, clipboard, recording, AI | Planned or incomplete |
-| Production desktop packaging | Not documented as a verified release process |
+| Android onboarding and local profile flow | Tested and working |
+| LAN discovery and device selection | Tested and working |
+| Connection request and phone-side approval | Tested and working |
+| Android authentication and screen-capture consent | Tested and working |
+| H.264 screen capture, transport, decoding, and desktop rendering | Tested and working |
+| Implemented remote interaction and session controls | Tested and working |
+| Phoney AI assistant | Planned; not implemented yet |
 
-This table describes the implementation direction, not a guarantee that every feature works on every device. Re-test the full flow after changes to networking, permissions, video, or input handling.
+The status above reflects the maintainer's end-to-end testing of the current project. Phoney is the remaining planned feature; its future integration should preserve the existing PhoneCast connection and screen-sharing workflows.
 
 ## Architecture
 
@@ -413,27 +405,13 @@ npm start
 
 Do not commit generated build output, dependency folders, local SDK configuration, or secrets. The repository's `.gitignore` covers common Android/Gradle generated files and local configuration.
 
-## Known limitations and roadmap
+## Future update: Phoney AI assistant
 
-### Current limitations
+The next planned major addition is **Phoney**, an AI assistant integrated into PhoneCast.
 
-- Local discovery and direct connection depend on the network and firewall.
-- Android permission and foreground-service requirements vary by OS version and device.
-- Encoding and decoding performance depend on device hardware and the Electron/Chromium runtime.
-- Remote input behavior and gesture/keyboard coverage are not guaranteed across all Android devices.
-- The current repository does not document a tested production Windows installer or update mechanism.
-- TCP traffic should be treated as unencrypted unless transport encryption is explicitly added and verified.
+Phoney is not implemented in the current version. The existing PhoneCast features—including the connection and screen-sharing workflow—are separate from this planned assistant and have been tested by the maintainer.
 
-### Potential next steps
-
-- Improve remote touch, pointer, scroll, and keyboard reliability.
-- Improve reconnection, session cleanup, and diagnostics.
-- Add protocol-level tests and more automated integration coverage.
-- Add secure transport and document the threat model.
-- Add a verified desktop packaging/signing workflow.
-- Explore clipboard/file transfer and other workspace features only after their permissions, privacy model, and end-to-end behavior are implemented.
-
-These items are roadmap ideas, not claims about current functionality.
+Future Phoney work may include defining its user experience, assistant capabilities, privacy boundaries, and integration with the existing desktop/Android architecture. No Phoney capability should be considered available until it is implemented and tested.
 
 ## License
 
