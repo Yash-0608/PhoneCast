@@ -18,17 +18,25 @@ const discoveredDevices = new Map();
 
 let discoveryTimer = null;
 
-function getDiscoveryInterface() {
-    const interfaces = os.networkInterfaces();
+function getLanInterfacesForDiagnostics() {
+
+    const interfaces =
+        os.networkInterfaces();
+
     const candidates = [];
 
     for (const [name, entries] of Object.entries(interfaces)) {
+
         for (const entry of entries || []) {
+
+            const isIPv4 =
+                entry.family === "IPv4" ||
+                entry.family === 4;
+
             if (
-                entry.family !== "IPv4" ||
+                !isIPv4 ||
                 entry.internal ||
-                !entry.address ||
-                entry.mac === "00:00:00:00:00:00"
+                !entry.address
             ) {
                 continue;
             }
@@ -47,31 +55,15 @@ function getDiscoveryInterface() {
         }
     }
 
-    const physical =
-        candidates.find(candidate =>
-            !/vpn|virtual|tunnel|tun|tap/i.test(candidate.name)
-        );
+    console.log(
+        "[PhoneCast] Local IPv4 interfaces available for LAN discovery:",
+        candidates.length
+            ? candidates
+            : "No private IPv4 interfaces reported by Windows."
+    );
 
-    const selected =
-        physical ||
-        candidates[0] ||
-        null;
-
-    if (selected) {
-        console.log(
-            "[PhoneCast] Bonjour multicast interface:",
-            selected.name,
-            selected.address
-        );
-    } else {
-        console.warn(
-            "[PhoneCast] No private physical IPv4 interface found; using Bonjour defaults."
-        );
-    }
-
-    return selected?.address || null;
+    return candidates;
 }
-
 
 /*
  * ============================================================
@@ -223,16 +215,30 @@ function startDiscovery() {
 
     try {
 
-        const discoveryInterface =
-            getDiscoveryInterface();
+        const lanInterfaces =
+            getLanInterfacesForDiagnostics();
 
+        /*
+         * IMPORTANT:
+         *
+         * Do not bind Bonjour to one automatically selected adapter.
+         * Windows may have Wi-Fi, Ethernet, VPN, Hyper-V, or other virtual
+         * adapters, and the first private address is not guaranteed to be
+         * the network used by the Android phone.
+         *
+         * With no explicit interface option, bonjour-service/multicast-dns
+         * uses its default multi-interface behavior.
+         */
         bonjour =
-            discoveryInterface
-                ? new Bonjour({
-                    interface:
-                        discoveryInterface
-                })
-                : new Bonjour();
+            new Bonjour();
+
+        console.log(
+            "[PhoneCast] Starting mDNS browse with default multi-interface selection.",
+            {
+                lanInterfaceCount: lanInterfaces.length,
+                lanInterfaces
+            }
+        );
 
         /*
          * Android advertises:
@@ -2779,8 +2785,10 @@ ipcMain.handle(
         if (
             ![
                 "INPUT_TOUCH",
+                "INPUT_SCROLL",
                 "INPUT_TEXT",
-                "INPUT_KEY"
+                "INPUT_KEY",
+                "PHONE_ACTION"
             ].includes(message.type)
         ) {
 

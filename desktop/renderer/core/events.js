@@ -67,6 +67,31 @@ function safeString(
 }
 
 
+
+function normalizePhoneNotification(item) {
+    if (!item || typeof item !== "object") {
+        return null;
+    }
+
+    const key = safeString(item.key).trim();
+    if (!key) {
+        return null;
+    }
+
+    return {
+        key,
+        packageName: safeString(item.packageName),
+        appName: safeString(item.appName, "App"),
+        title: safeString(item.title),
+        text: safeString(item.text),
+        postTime: safeNumber(item.postTime, 0),
+        hasReplyAction: Boolean(item.hasReplyAction),
+        replyActionTitle: safeString(item.replyActionTitle),
+        isOngoing: Boolean(item.isOngoing)
+    };
+}
+
+
 function clearDiscoveryTimers() {
 
     if (
@@ -714,6 +739,118 @@ export function handleConnectionEvent(
             break;
 
 
+        case "PHONE_NOTIFICATIONS_SNAPSHOT": {
+            const incoming = Array.isArray(event.notifications)
+                ? event.notifications
+                : [];
+
+            state.notifications = incoming
+                .map(normalizePhoneNotification)
+                .filter(Boolean)
+                .sort((a, b) => b.postTime - a.postTime)
+                .slice(0, 200);
+
+            state.phoneActionStatus = null;
+            window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            break;
+        }
+
+
+        case "PHONE_NOTIFICATION_POSTED": {
+            const notification = normalizePhoneNotification(event);
+            if (!notification) {
+                break;
+            }
+
+            state.notifications = [
+                notification,
+                ...state.notifications.filter(
+                    item => item.key !== notification.key
+                )
+            ]
+                .sort((a, b) => b.postTime - a.postTime)
+                .slice(0, 200);
+
+            window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            break;
+        }
+
+
+        case "PHONE_NOTIFICATION_REMOVED": {
+            const notificationKey = safeString(event.key);
+            state.notifications = state.notifications.filter(
+                item => item.key !== notificationKey
+            );
+
+            window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            break;
+        }
+
+
+        case "PHONE_ACTION_RESULT":
+            state.phoneActionStatus = {
+                action: safeString(event.action),
+                notificationKey: safeString(event.notificationKey),
+                success: Boolean(event.success),
+                message: event.success
+                    ? "Phone action completed."
+                    : "The phone could not complete that action."
+            };
+
+            window.dispatchEvent(new Event("phonecast-notifications-updated"));
+            window.dispatchEvent(new Event("phonecast-call-data-updated"));
+            break;
+
+
+        case "PHONE_CONTACTS_RESULT":
+            state.contacts = Array.isArray(event.contacts)
+                ? event.contacts
+                    .filter(item => item && typeof item === "object")
+                    .map(item => ({
+                        id: safeString(item.id),
+                        name: safeString(item.name, "Unknown contact"),
+                        number: safeString(item.number)
+                    }))
+                : [];
+
+            state.phoneActionStatus = {
+                action: "GET_CONTACTS",
+                success: Boolean(event.success),
+                message: event.success
+                    ? "Contacts loaded."
+                    : safeString(event.message, "Contacts could not be loaded.")
+            };
+
+            window.dispatchEvent(new Event("phonecast-call-data-updated"));
+            break;
+
+
+        case "PHONE_RECENT_CALLS_RESULT":
+            state.recentCalls = Array.isArray(event.calls)
+                ? event.calls
+                    .filter(item => item && typeof item === "object")
+                    .map(item => ({
+                        id: safeString(item.id),
+                        name: safeString(item.name, "Unknown caller"),
+                        number: safeString(item.number),
+                        type: safeString(item.type),
+                        date: safeNumber(item.date, 0),
+                        durationSeconds: safeNumber(item.durationSeconds, 0)
+                    }))
+                : [];
+
+            state.phoneActionStatus = {
+                action: "GET_RECENT_CALLS",
+                success: Boolean(event.success),
+                message: event.success
+                    ? "Recent calls loaded."
+                    : safeString(event.message, "Call history could not be loaded.")
+            };
+
+            window.dispatchEvent(new Event("phonecast-call-data-updated"));
+            break;
+
+
         // ====================================================
         // REQUEST ACCEPTED
         // ====================================================
@@ -1069,6 +1206,13 @@ function resetConnectionState() {
 
     state.activeRequestId =
         null;
+
+    state.notifications = [];
+    state.contacts = [];
+    state.recentCalls = [];
+    state.phoneActionStatus = null;
+    window.dispatchEvent(new Event("phonecast-notifications-updated"));
+    window.dispatchEvent(new Event("phonecast-call-data-updated"));
 
     stopVideoState(
         false

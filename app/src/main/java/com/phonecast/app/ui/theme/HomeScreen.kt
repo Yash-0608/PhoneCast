@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -70,6 +71,15 @@ fun HomeScreen(
                 )
             )
     ) {
+
+        Image(
+            painter = painterResource(id = R.drawable.phonecast_warm_mountains),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.16f),
+            contentScale = ContentScale.Crop
+        )
 
         LazyColumn(
             modifier = Modifier
@@ -411,89 +421,184 @@ fun HomeScreen(
 @Composable
 private fun StatusCard() {
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(
-                RoundedCornerShape(20.dp)
-            )
+            .clip(RoundedCornerShape(24.dp))
             .background(
-                Brush.horizontalGradient(
+                Brush.verticalGradient(
                     colors = listOf(
+                        PhoneCastColors.CardElevated,
                         PhoneCastColors.Card,
-                        PhoneCastColors.CardSecondary
+                        PhoneCastColors.BackgroundSecondary
                     )
                 )
             )
             .border(
                 width = 1.dp,
-                color = PhoneCastColors.Border,
-                shape = RoundedCornerShape(20.dp)
+                color = PhoneCastColors.BorderBright.copy(alpha = 0.62f),
+                shape = RoundedCornerShape(24.dp)
             )
-            .padding(18.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 18.dp, vertical = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         Box(
             modifier = Modifier
-                .size(52.dp)
+                .size(100.dp)
                 .clip(CircleShape)
                 .background(
-                    PhoneCastColors.SuccessBackground
+                    Brush.radialGradient(
+                        colors = listOf(
+                            PhoneCastColors.NeonBlue.copy(alpha = 0.26f),
+                            PhoneCastColors.DarkBlue.copy(alpha = 0.55f),
+                            Color.Transparent
+                        )
+                    )
                 )
                 .border(
                     width = 1.dp,
-                    color = PhoneCastColors.Success.copy(
-                        alpha = 0.35f
-                    ),
+                    color = PhoneCastColors.BorderBright.copy(alpha = 0.72f),
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
 
-            Icon(
-                imageVector = Icons.Default.Wifi,
-                contentDescription = null,
-                tint = PhoneCastColors.Success,
-                modifier = Modifier.size(23.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
+                    .clip(CircleShape)
+                    .background(PhoneCastColors.Card)
+                    .border(
+                        width = 1.dp,
+                        color = PhoneCastColors.NeonBlue.copy(alpha = 0.36f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.logo),
+                    contentDescription = "PhoneCast",
+                    modifier = Modifier.size(42.dp),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                        PhoneCastColors.NeonBlue
+                    ),
+                    contentScale = ContentScale.Fit
+                )
+            }
         }
 
-        Spacer(
-            modifier = Modifier.width(14.dp)
-        )
+        Spacer(modifier = Modifier.height(14.dp))
 
-        Column(
-            modifier = Modifier.weight(1f)
+        Row(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(PhoneCastColors.SuccessBackground)
+                .border(
+                    width = 1.dp,
+                    color = PhoneCastColors.Success.copy(alpha = 0.34f),
+                    shape = CircleShape
+                )
+                .padding(horizontal = 11.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(PhoneCastColors.Success)
+            )
             Text(
                 text = "READY",
                 color = PhoneCastColors.Success,
-                fontSize = 11.sp,
+                fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.2.sp
+                letterSpacing = 1.1.sp
             )
+        }
 
-            Spacer(
-                modifier = Modifier.height(4.dp)
-            )
+        Spacer(modifier = Modifier.height(9.dp))
 
-            Text(
-                text = "PhoneCast is ready to receive connections",
-                color = PhoneCastColors.PrimaryText,
-                fontSize = 12.sp
-            )
+        Text(
+            text = "Your phone, on your desk.",
+            color = PhoneCastColors.PrimaryText,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
 
-            Spacer(
-                modifier = Modifier.height(3.dp)
-            )
+        Spacer(modifier = Modifier.height(5.dp))
 
-            Text(
-                text = "Visible to devices on your local network",
-                color = PhoneCastColors.SecondaryText,
-                fontSize = 9.sp
-            )
+        Text(
+            text = "PhoneCast is ready to receive connections",
+            color = PhoneCastColors.SecondaryText,
+            fontSize = 11.sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = "Visible to devices on your local network",
+            color = PhoneCastColors.MutedText,
+            fontSize = 9.sp,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(PhoneCastColors.Background.copy(alpha = 0.48f))
+                    .padding(horizontal = 10.dp, vertical = 9.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "CONNECTION",
+                    color = PhoneCastColors.NeonBlue,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.65.sp
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = "Local Wi-Fi",
+                    color = PhoneCastColors.PrimaryText,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(PhoneCastColors.Background.copy(alpha = 0.48f))
+                    .padding(horizontal = 10.dp, vertical = 9.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "SECURITY",
+                    color = PhoneCastColors.NeonBlue,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.65.sp
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = "Phone approval",
+                    color = PhoneCastColors.PrimaryText,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
@@ -594,6 +699,9 @@ private fun NoRequestsCard() {
                 contentDescription = "No connection requests",
                 modifier = Modifier
                     .size(105.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                    PhoneCastColors.NeonBlue
+                ),
                 contentScale = ContentScale.Fit
             )
 
@@ -866,6 +974,9 @@ private fun HistoryCard(
                 ),
                 contentDescription = "Laptop",
                 modifier = Modifier.size(32.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                    PhoneCastColors.NeonBlue
+                ),
                 contentScale = ContentScale.Fit
             )
         }

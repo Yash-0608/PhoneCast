@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.content.IntentFilter
 import android.provider.Settings
 import android.graphics.Color as AndroidColor
@@ -23,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.phonecast.app.capture.ScreenCaptureService
 import com.phonecast.app.control.PhoneCastAccessibilityService
+import com.phonecast.app.notifications.PhoneCastNotificationListenerService
 import com.phonecast.app.network.ConnectionRequest
 import com.phonecast.app.network.PhoneCastDiscovery
 import com.phonecast.app.network.PhoneCastServer
@@ -38,6 +40,18 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         private const val TAG = "PhoneCastMain"
+
+        @Volatile
+        private var notificationEventTarget: MainActivity? = null
+
+        /**
+         * Forward notification events only through the authenticated
+         * PhoneCast session. The listener never opens a network connection.
+         */
+        @JvmStatic
+        fun publishNotificationEvent(event: JSONObject) {
+            notificationEventTarget?.forwardNotificationEvent(event)
+        }
 
         private const val DEFAULT_CAPTURE_WIDTH = 1080
         private const val DEFAULT_CAPTURE_HEIGHT = 2400
@@ -101,6 +115,12 @@ class MainActivity : FragmentActivity() {
     private var authenticated = false
 
     private val activityDestroyed = AtomicBoolean(false)
+
+    /*
+     * Prevent repeated dialogs if several input messages arrive while the
+     * owner is being asked to enable accessibility in Android Settings.
+     */
+    private var accessibilityPromptVisible = false
 
     // =========================================================
     // SCREEN CAPTURE STATE
@@ -179,6 +199,8 @@ class MainActivity : FragmentActivity() {
     ) {
 
         super.onCreate(savedInstanceState)
+
+        notificationEventTarget = this
 
         configureSystemBars()
 
@@ -271,16 +293,16 @@ class MainActivity : FragmentActivity() {
 
         window.statusBarColor =
             AndroidColor.rgb(
-                5,
-                10,
-                15
+                11,
+                9,
+                7
             )
 
         window.navigationBarColor =
             AndroidColor.rgb(
-                5,
-                10,
-                15
+                11,
+                9,
+                7
             )
     }
 
@@ -841,6 +863,13 @@ class MainActivity : FragmentActivity() {
                     )
                 }
 
+                "PHONE_ACTION" -> {
+
+                    handlePhoneAction(
+                        json
+                    )
+                }
+
                 else -> {
 
                     Log.w(
@@ -1008,21 +1037,221 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun notifyRemoteControlUnavailable() {
+    /**
+     * Executes a narrowly-scoped phone action from the authorized desktop
+     * session. Calls use ACTION_DIAL, which opens the system dialer with the
+     * number prefilled and leaves the final call decision to the user.
+     */
+    private fun handlePhoneAction(
+        json: JSONObject
+    ) {
+
+        if (!isAuthorizedInputRequest(json)) {
+            Log.w(TAG, "Rejected phone action without an authorized session.")
+            return
+        }
+
+        val action =
+            json.optString("action").trim().uppercase()
+
+        if (action == "REPLY_NOTIFICATION") {
+            val notificationKey = json.optString("notificationKey")
+            val replyText = json.optString("text")
+            val success = PhoneCastNotificationListenerService.replyToNotification(
+                notificationKey,
+                replyText
+            )
+            sendJsonToActiveLaptop(
+                JSONObject()
+                    .put("type", "PHONE_ACTION_RESULT")
+                    .put("requestId", activeRequestId ?: "")
+                    .put("action", action)
+                    .put("notificationKey", notificationKey)
+                    .put("success", success)
+            )
+            return
+        }
+
+        if (action == "DISMISS_NOTIFICATION") {
+            val notificationKey = json.optString("notificationKey")
+            val success = PhoneCastNotificationListenerService.dismissNotification(
+                notificationKey
+            )
+            sendJsonToActiveLaptop(
+                JSONObject()
+                    .put("type", "PHONE_ACTION_RESULT")
+                    .put("requestId", activeRequestId ?: "")
+                    .put("action", action)
+                    .put("notificationKey", notificationKey)
+                    .put("success", success)
+            )
+            return
+        }
+
+        val targetIntent: Intent = try {
+            when (action) {
+                "OPEN_DIALER" -> {
+                    val number = json.optString("number").trim()
+                    if (number.isBlank()) {
+                        Log.w(TAG, "OPEN_DIALER ignored because the number is blank.")
+                        return
+                    }
+                    Intent(
+                        Intent.ACTION_DIAL,
+                        Uri.fromParts("tel", number, null)
+                    )
+                }
+
+                "OPEN_SETTINGS" ->
+                    Intent(Settings.ACTION_SETTINGS)
+
+                "OPEN_SETTINGS_NETWORK" ->
+                    Intent(Settings.ACTION_WIFI_SETTINGS)
+
+                "OPEN_SETTINGS_CONNECTED_DEVICES" ->
+                    Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
+
+                "OPEN_SETTINGS_APPS" ->
+                    Intent(Settings.ACTION_APPLICATION_SETTINGS)
+
+                "OPEN_NOTIFICATION_ACCESS_SETTINGS" ->
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+
+                "OPEN_SETTINGS_BATTERY" ->
+                    Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS)
+
+                "OPEN_SETTINGS_DISPLAY" ->
+                    Intent(Settings.ACTION_DISPLAY_SETTINGS)
+
+                "OPEN_SETTINGS_SOUND" ->
+                    Intent(Settings.ACTION_SOUND_SETTINGS)
+
+                "OPEN_SETTINGS_PRIVACY" ->
+                    Intent(Settings.ACTION_PRIVACY_SETTINGS)
+
+                "OPEN_SETTINGS_LOCATION" ->
+                    Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+
+                "OPEN_SETTINGS_SECURITY" ->
+                    Intent(Settings.ACTION_SECURITY_SETTINGS)
+
+                "OPEN_SETTINGS_SYSTEM" ->
+                    Intent(Settings.ACTION_LOCALE_SETTINGS)
+
+                "OPEN_SETTINGS_ABOUT" ->
+                    Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)
+
+                else -> {
+                    Log.w(TAG, "Unknown PhoneCast phone action: $action")
+                    return
+                }
+            }
+        } catch (error: Exception) {
+            Log.e(TAG, "Could not build phone action intent: $action", error)
+            Intent(Settings.ACTION_SETTINGS)
+        }
 
         runOnUiThread {
-            Toast.makeText(
-                this,
-                "Enable PhoneCast in Accessibility settings to control this phone.",
-                Toast.LENGTH_LONG
-            ).show()
+            try {
+                startActivity(targetIntent)
+                Log.i(TAG, "Launched phone action: $action")
+            } catch (error: Exception) {
+                Log.e(TAG, "Phone action failed: $action", error)
+
+                if (action != "OPEN_SETTINGS") {
+                    try {
+                        startActivity(Intent(Settings.ACTION_SETTINGS))
+                    } catch (fallbackError: Exception) {
+                        Log.e(TAG, "Unable to open Android Settings fallback.", fallbackError)
+                        Toast.makeText(
+                            this,
+                            "Android could not open that screen. Open Settings on the phone.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Android could not open Settings.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+    }
+
+    private fun notifyRemoteControlUnavailable() {
+
+        val accessibilityAvailable =
+            PhoneCastAccessibilityService.isEnabled()
+
+        runOnUiThread {
+
+            if (isFinishing || isDestroyed) {
+                return@runOnUiThread
+            }
+
+            if (!accessibilityAvailable) {
+
+                if (accessibilityPromptVisible) {
+                    return@runOnUiThread
+                }
+
+                accessibilityPromptVisible = true
+
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Enable PhoneCast remote control")
+                    .setMessage(
+                        "PhoneCast can display your screen, but Android remote touch and navigation " +
+                            "require the PhoneCast accessibility service. On the next screen, open " +
+                            "PhoneCast and switch the service on. Android requires you to approve " +
+                            "this manually; PhoneCast cannot enable it for you."
+                    )
+                    .setPositiveButton("Open Settings") { _, _ ->
+                        try {
+                            startActivity(
+                                Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                            )
+                        } catch (error: Exception) {
+                            Log.e(
+                                TAG,
+                                "Unable to open Accessibility settings.",
+                                error
+                            )
+                            Toast.makeText(
+                                this,
+                                "Open Settings > Accessibility > Installed apps > PhoneCast.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                    .setNegativeButton("Later", null)
+                    .setOnDismissListener {
+                        accessibilityPromptVisible = false
+                    }
+                    .show()
+
+            } else {
+                Toast.makeText(
+                    this,
+                    "PhoneCast could not apply that input. Try again, and make sure the phone screen is unlocked.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
         sendJsonToActiveLaptop(
             JSONObject().apply {
                 put("type", "REMOTE_CONTROL_UNAVAILABLE")
                 put("requestId", activeRequestId ?: "")
-                put("reason", "ACCESSIBILITY_SERVICE_DISABLED")
+                put(
+                    "reason",
+                    if (accessibilityAvailable) {
+                        "INPUT_DISPATCH_FAILED"
+                    } else {
+                        "ACCESSIBILITY_SERVICE_DISABLED"
+                    }
+                )
             }
         )
     }
@@ -1520,6 +1749,8 @@ class MainActivity : FragmentActivity() {
                 )
             }
         )
+
+        PhoneCastNotificationListenerService.publishCurrentSnapshot()
 
         Log.d(
             TAG,
@@ -2462,6 +2693,28 @@ class MainActivity : FragmentActivity() {
     // SEND JSON TO ACTIVE LAPTOP
     // =========================================================
 
+    private fun forwardNotificationEvent(
+        event: JSONObject
+    ) {
+        if (
+            !authenticated ||
+            activeRequestId.isNullOrBlank() ||
+            activeSocket?.isClosed != false ||
+            activeWriter == null
+        ) {
+            return
+        }
+
+        try {
+            val payload = JSONObject(event.toString())
+                .put("requestId", activeRequestId)
+
+            sendJsonToActiveLaptop(payload)
+        } catch (error: Exception) {
+            Log.e(TAG, "Unable to forward notification event to the authorized laptop.", error)
+        }
+    }
+
     private fun sendJsonToActiveLaptop(
         json: JSONObject
     ) {
@@ -2705,6 +2958,10 @@ class MainActivity : FragmentActivity() {
                 "Failed to close database.",
                 exception
             )
+        }
+
+        if (notificationEventTarget === this) {
+            notificationEventTarget = null
         }
 
         super.onDestroy()
