@@ -1,870 +1,448 @@
-# PhoneCast : The Screen Share set up
+<div align="center">
+  <img src="desktop/renderer/assets/logo.png" alt="PhoneCast logo" width="150" />
 
-**Wireless Android Screen Sharing & Remote Control over Local Network**
+  # PhoneCast
 
-PhoneCast is a custom, LAN-based system that mirrors an Android phone's screen onto a Windows laptop and lets the laptop interact with the phone. It is not a single app. It is a **two-application communication system**: an Android app that advertises itself, asks for consent, captures and encodes the screen, and a Windows desktop app (Electron) that discovers the phone, initiates the connection, decodes the video, and sends input back.
+  **Android screen sharing and remote interaction for your Windows PC — over your local network.**
 
-There is no cloud service, account server, or relay in between. Devices talk directly over the local network, and nothing starts without explicit approval on the phone.
-
-**What makes the architecture interesting**
-
-- The **laptop always initiates** the connection; the phone only advertises availability.
-- Control and video travel on **separate TCP channels** (small JSON messages vs. a continuous H.264 binary stream).
-- Access is gated by **multiple consent stages** on the phone, none of which PhoneCast tries to bypass.
-- Video is captured with `MediaProjection`, encoded with the hardware H.264 encoder, and decoded on Windows with **WebCodecs**.
-
-> Status note: see [Current Status](#current-status) for what is working vs. in progress vs. planned. Nothing in this README should be read as a performance or compatibility guarantee.
+  [![Android](https://img.shields.io/badge/Android-API%2026%2B-3DDC84?logo=android&logoColor=white)](app/)
+  [![Electron](https://img.shields.io/badge/Desktop-Electron-47848F?logo=electron&logoColor=white)](desktop/)
+  [![Kotlin](https://img.shields.io/badge/Android-Kotlin-7F52FF?logo=kotlin&logoColor=white)](app/)
+  [![Network](https://img.shields.io/badge/Connection-LAN%20only-64748b)](#network-requirements)
+  [![Status](https://img.shields.io/badge/Status-Experimental-orange)](#current-status)
+</div>
 
 ---
 
-## Table of Contents
+## Overview
 
-- [Screenshots](#screenshots)
-- [Key Features](#key-features)
-- [Two-Application Architecture](#two-application-architecture)
-- [Who Initiates, and What Flows Where](#who-initiates-and-what-flows-where)
-- [Device Discovery](#device-discovery)
-- [Connection Flow](#connection-flow)
-- [Authorization and Security Model](#authorization-and-security-model)
-- [Media Capture Pipeline](#media-capture-pipeline)
-- [Protocol Overview](#protocol-overview)
-- [Remote Input](#remote-input)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [User Journeys](#user-journeys)
-- [Design System](#design-system)
-- [Setup](#setup)
-- [Building](#building)
-- [Network Requirements](#network-requirements)
+PhoneCast is a two-part application that lets an Android phone share its screen with a desktop app and supports remote interaction during an authorized session.
+
+It consists of:
+
+- **PhoneCast Android** — advertises the phone on the local network, asks for approval, obtains Android screen-capture consent, captures the display, and encodes video.
+- **PhoneCast Desktop** — discovers the phone, initiates a connection, receives and decodes the video stream, displays the phone screen, and sends supported control input.
+
+PhoneCast is designed for direct communication over a local network. The current architecture does not require a PhoneCast cloud account, cloud relay, or third-party streaming server.
+
+> **Project status:** PhoneCast is under active development. The screen-sharing path is the core workflow; remote-input coverage and some UI/workspace features are still evolving. This repository does not currently provide a verified production installer or promise compatibility with every Android device or network.
+
+## Contents
+
+- [Features](#features)
+- [Current status and scope](#current-status-and-scope)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Run the desktop app on Windows](#run-the-desktop-app-on-windows)
+- [Run the Android app](#run-the-android-app)
+- [Build an Android APK](#build-an-android-apk)
+- [Connect a phone and PC](#connect-a-phone-and-pc)
+- [Network requirements](#network-requirements)
+- [Security and privacy](#security-and-privacy)
 - [Troubleshooting](#troubleshooting)
-- [Security Considerations](#security-considerations)
-- [Limitations](#limitations)
-- [Performance](#performance)
-- [Current Status](#current-status)
-- [Roadmap](#roadmap)
-- [Development Philosophy](#development-philosophy)
-- [Debugging Architecture](#debugging-architecture)
-- [Contributing](#contributing)
-- [Repository Hygiene](#repository-hygiene)
+- [Repository layout](#repository-layout)
+- [Technology stack](#technology-stack)
+- [Development and contribution workflow](#development-and-contribution-workflow)
+- [Known limitations and roadmap](#known-limitations-and-roadmap)
 - [License](#license)
-- [Author](#author)
+- [Maintainer](#maintainer)
 
 ---
 
-## Screenshots
-
-Add screenshots here.
-
-| Android | Windows |
-|---|---|
-| _Welcome screen_ | _Desktop dashboard_ |
-| _Home dashboard_ | _Device discovery_ |
-| _Connection request_ | _Live casting screen_ |
-
-<!-- Suggested placeholder paths once you add images (these files do not exist yet):
-docs/screenshots/android-welcome.png
-docs/screenshots/android-home.png
-docs/screenshots/android-request.png
-docs/screenshots/windows-dashboard.png
-docs/screenshots/windows-casting.png
--->
-
----
-
-## Key Features
-
-### Android app
-
-- Onboarding flow
-- Local account setup (data stays on the device)
-- Local device security authentication through Android system authentication
-- Service advertising via Android NSD (mDNS)
-- Handling of incoming connection requests with explicit accept / reject
-- `MediaProjection` consent
-- Screen capture through a foreground `ScreenCaptureService`
-- H.264 hardware encoding via `MediaCodec`
-- Built-in video TCP server
-- Connection history
-
-### Windows app
-
-- Electron desktop application
-- LAN device discovery with mDNS / Bonjour (`bonjour-service`)
-- Device list and selection
-- Connection initiation over a TCP control channel
-- Separate TCP video stream connection
-- H.264 decoding with WebCodecs `VideoDecoder`
-- Live casting interface rendering to a canvas
-- Phone interaction via touchpad-style input, keyboard, and supported shortcuts (see [Current Status](#current-status) for the exact state)
-- Session termination
-
----
-
-## Two-Application Architecture
-
-PhoneCast consists of **PhoneCast Android** and **PhoneCast Windows Desktop**. Each has distinct responsibilities.
-
-```mermaid
-flowchart LR
-    subgraph Phone["PhoneCast Android"]
-        NSD["NSD advertising"]
-        CTRL_A["Control server"]
-        AUTH["Local authentication"]
-        MP["MediaProjection"]
-        ENC["H.264 encoder"]
-        VID_A["Video server"]
-        INP["Input handling"]
-    end
-
-    subgraph Laptop["PhoneCast Windows Desktop"]
-        DISC["mDNS discovery"]
-        CTRL_W["Control client"]
-        VID_W["Video client"]
-        DEC["WebCodecs decoder"]
-        UI["Viewer UI"]
-        CAP["Input capture"]
-    end
-
-    NSD -. "_phonecast._tcp" .-> DISC
-    CTRL_W -- "TCP control (JSON)" --> CTRL_A
-    VID_A -- "TCP video (H.264)" --> VID_W
-    MP --> ENC --> VID_A
-    VID_W --> DEC --> UI
-    CAP --> CTRL_W
-    CTRL_A --> INP
-    CTRL_A --> AUTH
-```
-
-Simplified view:
-
-```
-Android Phone
-     │
-     │ NSD / mDNS  (advertises _phonecast._tcp)
-     ▼
-Local Wi-Fi / LAN
-     ▲
-     │
-Windows Laptop
-     │
-     ├── TCP Control Channel  (JSON messages)
-     └── TCP Video Channel    (H.264 binary stream)
-```
-
-### Android responsibilities
-
-- Advertising the device on the LAN
-- Receiving and presenting connection requests
-- Authorization and local authentication
-- `MediaProjection` and screen capture
-- Video encoding and serving
-- Applying received input
-- Session management
-
-### Windows responsibilities
-
-- Discovering PhoneCast devices
-- Initiating connections
-- Control communication
-- Receiving the video stream and decoding H.264
-- Rendering the phone screen in the UI
-- Capturing laptop input and sending remote-control commands
-- Session management
-
----
-
-## Who Initiates, and What Flows Where
-
-**The laptop always initiates the connection. The phone never initiates one.** The phone only advertises that it is available.
-
-```
-Laptop discovers phone
-        ↓
-Laptop connects to phone
-        ↓
-Laptop sends CONNECTION_REQUEST
-        ↓
-Phone asks the user for approval
-```
-
-> **One-sided initiation does not mean one-way communication.** Once a session is authorized, data flows in both directions.
-
-| Direction | Content |
-|---|---|
-| **Phone → Laptop** | Screen stream, connection responses, status events |
-| **Laptop → Phone** | Connection request, touch/input commands, keyboard commands, shortcut commands, termination commands |
-
----
-
-## Device Discovery
-
-Discovery and connection are **separate stages**. Discovery only tells the laptop that a phone exists and where to reach it. It does not open a session.
-
-| Side | Library | Detail |
-|---|---|---|
-| Android | Android NSD | Advertises service type `_phonecast._tcp` |
-| Windows | `bonjour-service` | Searches with `type: 'phonecast'`, `protocol: 'tcp'` |
-
-The library prepends the underscore, so the desktop query `phonecast` / `tcp` maps to the advertised `_phonecast._tcp`.
-
-Discovery results provide information such as device name, host/IP, control port, and other service information. After that, the user picks a device and the connection flow begins.
-
----
-
-## Connection Flow
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant W as Windows Laptop
-    participant A as Android Phone
-    actor U as Phone User
-
-    A->>A: Advertise _phonecast._tcp (NSD)
-    W->>W: Search for PhoneCast devices
-    W->>W: Show discovered devices
-    W->>A: Open TCP control connection
-    W->>A: CONNECTION_REQUEST
-    A->>U: Show connection request
-    U->>A: Accept / Reject
-    A->>W: REQUEST_ACCEPTED (or REQUEST_REJECTED)
-    A->>U: Android local authentication
-    A->>W: AUTHENTICATION_SUCCESS
-    A->>U: MediaProjection consent dialog
-    U->>A: Grant screen capture
-    A->>A: Start capture + H.264 encoding
-    A->>W: VIDEO_STREAM_READY
-    W->>A: Connect to video channel
-    A-->>W: Codec header, then H.264 frames
-    W->>W: Decode (WebCodecs) and render
-    Note over W,A: Remote input available during the authorized session
-    W->>A: TERMINATE_SESSION
-    A->>W: SESSION_TERMINATED
-```
-
-Step by step:
-
-1. Launch PhoneCast on Android.
-2. Launch PhoneCast on Windows.
-3. Connect both devices to the same LAN.
-4. Android advertises the PhoneCast service.
-5. Windows searches for PhoneCast devices.
-6. Windows shows the discovered devices.
-7. The user selects a phone.
-8. The laptop opens a TCP control connection.
-9. The laptop sends `CONNECTION_REQUEST`.
-10. The phone displays the request.
-11. The user accepts or rejects.
-12. If accepted, Android performs local authentication.
-13. Android requests `MediaProjection` consent.
-14. The user grants screen capture permission.
-15. Android starts screen capture.
-16. Android starts H.264 streaming.
-17. The phone sends `VIDEO_STREAM_READY`.
-18. The laptop connects to the video stream.
-19. The laptop decodes H.264.
-20. The laptop renders the phone screen.
-21. Remote input becomes available.
-22. The user can terminate the session.
-
-### Five states that are not the same thing
-
-These are distinct milestones. Being at one does not imply the next:
-
-| # | State | Meaning |
-|---|---|---|
-| 1 | TCP connection established | A socket is open. Nothing has been requested yet. |
-| 2 | Request delivered | The phone received `CONNECTION_REQUEST`. |
-| 3 | Request accepted | The user approved on the phone. |
-| 4 | Authentication successful | Android local authentication passed. |
-| 5 | Screen sharing started | `MediaProjection` was granted and the stream is live. |
-
----
-
-## Authorization and Security Model
-
-PhoneCast uses several user-consent stages, all on the phone:
-
-1. **The laptop initiates** a request.
-2. **The phone explicitly accepts** it.
-3. **Android local authentication** is completed.
-4. **Android `MediaProjection` consent** is granted.
-
-PhoneCast does **not** attempt to bypass biometrics, PIN, pattern, password, or Android's screen-capture consent.
-
-Remote input is only allowed during an authorized session. When the session ends:
-
-- remote input stops,
-- sockets close,
-- session state is cleared.
-
-See also [Security Considerations](#security-considerations) for what is not claimed.
-
----
-
-## Media Capture Pipeline
-
-```
-Android Display
-      ↓
-MediaProjection
-      ↓
-ScreenCaptureService
-      ↓
-H.264 Hardware Encoder (MediaCodec)
-      ↓
-Video TCP Server
-      ↓
-LAN
-      ↓
-Windows Electron Main Process
-      ↓
-IPC
-      ↓
-Renderer
-      ↓
-WebCodecs VideoDecoder
-      ↓
-Canvas / Live Viewer
-```
-
-### Why two channels?
-
-| Channel | Content | Characteristics |
-|---|---|---|
-| **Control** | Application events and commands | Low bandwidth, newline-delimited JSON |
-| **Video** | H.264 stream | Continuous binary data |
-
-Keeping them separate means a burst of video data does not delay a control message such as a rejection or a termination, and each channel can use a format suited to its content.
-
-No specific FPS or latency is guaranteed. See [Performance](#performance).
-
----
-
-## Protocol Overview
-
-### Control protocol
-
-Control messages are **JSON followed by a newline** (newline-delimited JSON) over the TCP control channel. These are application-level events, not transport events.
-
-Message types:
-
-| Message | Purpose |
-|---|---|
-| `CONNECTION_REQUEST` | Laptop asks the phone for a session |
-| `REQUEST_ACCEPTED` | User accepted on the phone |
-| `REQUEST_REJECTED` | User rejected on the phone |
-| `AUTHENTICATION_REQUIRED` | Phone needs local authentication |
-| `AUTHENTICATION_SUCCESS` | Local authentication passed |
-| `SCREEN_CAPTURE_STARTED` | Capture has started |
-| `SCREEN_CAPTURE_READY` | Capture is ready |
-| `SCREEN_SHARE_READY` | Screen sharing is ready |
-| `SCREEN_CAPTURE_FAILED` | Capture could not start |
-| `VIDEO_STREAM_READY` | Video server is ready for the laptop to connect |
-| `VIDEO_STREAM_STOPPED` | Video stream ended |
-| `TERMINATE_SESSION` | Laptop asks to end the session |
-| `SESSION_TERMINATED` | Session has ended |
-
-<!-- Confirm this list against the source. Remove or add types to match what is actually in the code. -->
-
-> Payload field names for each message are not documented here. Add them once the schema is finalized.
-
-### Video protocol
-
-Each packet on the video channel has this layout:
-
-```
-┌──────────────────┬──────────────────┬─────────────┐
-│ 4 bytes          │ 4 bytes          │ payload     │
-│ packet type      │ payload size     │ (N bytes)   │
-└──────────────────┴──────────────────┴─────────────┘
-```
-
-| Packet type | Meaning |
-|---|---|
-| `1` | Codec header |
-| `2` | H.264 frame |
-
-**Codec header payload**
-
-| Field | Description |
-|---|---|
-| `protocolVersion` | Video protocol version |
-| `width` | Video width |
-| `height` | Video height |
-| `frameRate` | Frame rate |
-| `bitrate` | Bitrate |
-| `csd0Length` | Length of CSD0 |
-| `csd0` | CSD0, the **SPS** |
-| `csd1Length` | Length of CSD1 |
-| `csd1` | CSD1, the **PPS** |
-
-**Frame payload**
-
-| Field | Description |
-|---|---|
-| `presentationTimeUs` | Presentation timestamp in microseconds |
-| `flags` | Frame flags |
-| H.264 frame data | Encoded frame bytes |
-
-<!-- Endianness and exact field widths are not specified here. Add them from the source if you want this section to be a full spec. -->
-
----
-
-## Remote Input
-
-The goal is to let laptop input operate the real Android interface:
-
-```
-Laptop input
-      ↓
-PhoneCast control layer
-      ↓
-LAN
-      ↓
-Android input handling
-      ↓
-Real Android interface
-```
-
-Input commands travel over the control channel and are only accepted during an authorized session.
-
-### Touch / pointer
-
-Categories: tap, press, drag, move, release. Scrolling and multi-touch are noted as **only if implemented**; see [Current Status](#current-status).
-
-**Coordinate mapping.** The viewer on the laptop and the video from the phone have different dimensions:
-
-| Laptop viewer | Phone video |
-|---|---|
-| `viewerWidth` × `viewerHeight` | `phoneWidth` × `phoneHeight` |
-
-Converting a pointer position on the viewer into a position on the phone has to account for:
-
-- aspect ratio
-- scaling
-- letterboxing
-- fullscreen
-- device rotation
-- DPI / CSS pixels
-
-### Keyboard
-
-Event kinds: key down, key up, text input where supported, special keys, and modifiers. Examples: `ENTER`, `BACKSPACE`, `DELETE`, `TAB`, `ESC`, `SPACE`, arrow keys.
-
-Full keyboard support is **not** claimed. See [Current Status](#current-status).
-
-### Shortcuts
-
-Shortcuts fall into two groups:
-
-- **PhoneCast-controlled shortcuts**, which the app may handle itself.
-- **Windows-owned shortcuts**, which belong to the operating system.
-
-PhoneCast should not indiscriminately intercept protected Windows system shortcuts.
-
----
-
-## Technology Stack
+## Features
 
 ### Android
 
-| Technology | Purpose |
+- Onboarding and local profile setup.
+- Local device security/authentication flow.
+- LAN service advertisement using Android Network Service Discovery (NSD).
+- Incoming connection request with explicit accept/reject.
+- Android \`MediaProjection\` consent before screen capture.
+- Foreground screen-capture service.
+- H.264 video encoding through Android \`MediaCodec\`.
+- Video stream served to the desktop over TCP.
+- Local connection-history functionality.
+
+### Desktop
+
+- Electron desktop application.
+- Phone discovery over mDNS/Bonjour.
+- Device selection and laptop-initiated connection requests.
+- Separate control and video connections.
+- H.264 decoding through Chromium WebCodecs.
+- Canvas-based live phone viewer.
+- Session status and disconnect handling.
+- Remote-input UI and control pathways that are still being developed and should be tested on the target device.
+
+### Not currently promised as complete
+
+The following are not complete, production-ready features of the current \`main\` branch:
+
+- Full, device-independent touch, pointer, gesture, and keyboard coverage.
+- Calls, reliable call history, or full contact management.
+- Reading/sending messages across all Android apps.
+- Clipboard synchronization, general file transfer, drag-and-drop, or recording.
+- A production-signed Windows installer and automatic updates.
+- Phoney AI or other assistant features.
+
+A screen or button in the UI should not be interpreted as proof that its end-to-end backend workflow is finished.
+
+## Current status and scope
+
+| Area | Status |
 |---|---|
-| Kotlin | Android application language |
-| Android NSD | LAN service advertising |
-| `MediaProjection` | Screen capture |
-| `MediaCodec` | H.264 hardware encoding |
-| Android system authentication | Local authorization |
-| Local storage (e.g. SQLite) | Local account and history data |
-| Accessibility service or other supported API | Applying remote input |
+| Android onboarding and local profile flow | Implemented; verify on the target device |
+| LAN discovery | Implemented; depends on network and firewall configuration |
+| Connection request and phone-side approval | Implemented in the core flow |
+| Android authentication and screen-capture consent | Uses Android system permission/authentication flows |
+| H.264 screen capture and desktop rendering | Core implementation present; device testing is required |
+| Remote touch/pointer/keyboard | In development; coverage may vary |
+| Calls, cross-app messages, file transfer, clipboard, recording, AI | Planned or incomplete |
+| Production desktop packaging | Not documented as a verified release process |
 
-<!-- Verify each row. Keep only technologies that are actually used. In particular confirm the storage mechanism and the input mechanism. -->
+This table describes the implementation direction, not a guarantee that every feature works on every device. Re-test the full flow after changes to networking, permissions, video, or input handling.
 
-### Windows
+## Architecture
 
-| Technology | Purpose |
+\`\`\`mermaid
+flowchart LR
+    subgraph Android["PhoneCast Android"]
+        NSD["NSD service advertisement"]
+        REQUEST["Connection request UI"]
+        CONSENT["Authentication and MediaProjection consent"]
+        CAPTURE["ScreenCaptureService"]
+        ENCODE["H.264 / MediaCodec"]
+        CONTROL_A["TCP control server"]
+        VIDEO_A["TCP video server"]
+        INPUT["Supported remote input"]
+    end
+
+    subgraph Desktop["PhoneCast Desktop (Electron)"]
+        DISCOVERY["Bonjour / mDNS discovery"]
+        CONTROL_D["TCP control client"]
+        VIDEO_D["Video client"]
+        DECODE["WebCodecs VideoDecoder"]
+        VIEWER["Canvas viewer"]
+        INPUT_D["Input capture"]
+    end
+
+    NSD -. "_phonecast._tcp" .-> DISCOVERY
+    DISCOVERY --> CONTROL_D
+    CONTROL_D <-->|"Newline-delimited JSON"| CONTROL_A
+    CONSENT --> CAPTURE --> ENCODE --> VIDEO_A
+    VIDEO_A -->|"H.264 over TCP"| VIDEO_D --> DECODE --> VIEWER
+    INPUT_D --> CONTROL_D
+    CONTROL_A --> REQUEST
+    CONTROL_A --> INPUT
+\`\`\`
+
+### Connection lifecycle
+
+1. Start PhoneCast on the phone and desktop.
+2. Put both devices on a network that permits local device-to-device traffic.
+3. The Android app advertises the \`_phonecast._tcp\` service.
+4. The desktop discovers the phone and the user selects it.
+5. The desktop initiates the control connection and sends a connection request.
+6. The phone user accepts or rejects the request.
+7. Android authentication and screen-capture consent are completed when requested.
+8. Android captures the display, encodes H.264, and announces that the video stream is ready.
+9. The desktop receives and decodes the video, then renders it in the viewer.
+10. The user ends the session from the desktop or phone as supported by the current flow.
+
+**Discovery is not authorization.** Finding a phone on the network does not itself start screen sharing. The laptop initiates the connection, but the phone user must approve the session and Android must grant screen-capture consent.
+
+### Transport overview
+
+| Channel | Direction | Data |
+|---|---|---|
+| Discovery | Android advertises; desktop browses | mDNS/NSD service information |
+| Control | Bidirectional | Newline-delimited JSON commands and status events |
+| Video | Android to desktop | H.264 stream over TCP |
+
+The control and video channels are separate so that continuous video traffic does not share the same application-level message stream as session commands. Protocol details may change while development continues; update both clients together when changing message types or packet framing.
+
+## Requirements
+
+### Desktop development (Windows-first)
+
+- Windows 10 or Windows 11 PC.
+- Git.
+- **Node.js 22 LTS** recommended, with npm.
+- A network connection that allows the phone and PC to reach each other.
+- Current PhoneCast source from this repository.
+
+The desktop app is built with Electron. The repository currently defines a \`start\` script; it does **not** define a production packaging script in \`desktop/package.json\`.
+
+### Android development
+
+- Android Studio with a compatible Android SDK installation.
+- **Android SDK Platform 36**, matching the current \`compileSdk\`.
+- JDK 17 or a compatible newer JDK supported by the Gradle/Android Gradle Plugin versions in the repository. Android Studio's configured Gradle JDK can be used.
+- An Android phone running **Android 8.0 (API 26) or later** for device testing.
+- USB debugging enabled if installing/running over USB, or a way to install the generated APK.
+- Wi-Fi or another local network that permits direct traffic between the phone and PC.
+
+The repository includes the Gradle wrapper, so a separate global Gradle installation is not required.
+
+## Run the desktop app on Windows
+
+### 1. Clone the repository
+
+Open PowerShell or a terminal:
+
+\`\`\`powershell
+git clone https://github.com/Yash-0608/PhoneCast.git
+cd PhoneCast
+\`\`\`
+
+### 2. Install desktop dependencies
+
+\`\`\`powershell
+cd desktop
+npm ci
+\`\`\`
+
+Use \`npm ci\` for a clean install based on the committed lockfile. You normally need to repeat it only when dependencies change or your install is missing/corrupt.
+
+### 3. Start PhoneCast
+
+\`\`\`powershell
+npm start
+\`\`\`
+
+This runs the Electron entry point configured in \`desktop/package.json\`. Keep the terminal open while testing so you can see startup and networking logs.
+
+To restart the desktop app, close it and run \`npm start\` again from the \`desktop\` directory.
+
+## Run the Android app
+
+### Option A — Android Studio
+
+1. Clone the repository if you have not already.
+2. Open **the repository root** (\`PhoneCast/\`) in Android Studio, not just the \`app/\` subfolder. The root contains \`settings.gradle.kts\` and the Gradle wrapper.
+3. Allow Gradle sync and SDK installation to finish.
+4. Connect an Android phone with USB debugging enabled, or select a compatible emulator for UI-only development.
+5. Select the \`app\` run configuration and click **Run**.
+6. On the phone, complete onboarding and grant Android permissions when prompted.
+
+A physical phone is recommended for end-to-end LAN discovery and screen-sharing tests. Emulator networking may prevent normal local discovery.
+
+### Option B — Build from PowerShell
+
+From the repository root:
+
+\`\`\`powershell
+.\gradlew.bat :app:assembleDebug
+\`\`\`
+
+On macOS/Linux, use:
+
+\`\`\`bash
+./gradlew :app:assembleDebug
+\`\`\`
+
+The first build may take longer while Gradle downloads the required Gradle distribution, plugins, and Android dependencies.
+
+## Build an Android APK
+
+Build the debug APK from the repository root:
+
+\`\`\`powershell
+.\gradlew.bat :app:assembleDebug
+\`\`\`
+
+Expected output:
+
+\`\`\`text
+app/build/outputs/apk/debug/app-debug.apk
+\`\`\`
+
+Install it on a connected Android device with ADB:
+
+\`\`\`powershell
+adb devices
+adb install -r app\build\outputs\apk\debug\app-debug.apk
+\`\`\`
+
+If the device is not listed by \`adb devices\`, check the USB cable, enable Developer options and USB debugging, and accept the authorization prompt on the phone.
+
+This is a **debug build**, not a production release. A distributable release requires a deliberate signing and release process. Do not commit signing keys, passwords, or keystore files.
+
+## Connect a phone and PC
+
+1. Install and open PhoneCast on Android.
+2. Start the desktop app with \`npm start\`.
+3. Connect the phone and PC to the same trusted Wi-Fi/LAN.
+4. Keep the phone unlocked and the app ready for incoming requests.
+5. Refresh or wait for device discovery in the desktop app.
+6. Select the discovered phone and initiate a connection.
+7. Accept the request on the phone.
+8. Complete Android authentication and grant screen-capture permission if prompted.
+9. Wait for the live video to appear in the desktop viewer.
+10. Test remote input separately; its support may depend on the current implementation, Android version, and required Android service/permissions.
+11. Disconnect the session before closing either app.
+
+## Network requirements
+
+PhoneCast relies on direct local-network communication.
+
+- The phone and PC should normally be on the same LAN.
+- Guest Wi-Fi, client/AP isolation, VPN routing, or corporate network rules may block discovery or direct connections.
+- Windows Firewall may block Electron or incoming local TCP traffic. When prompted, allow PhoneCast on a trusted **Private** network only if you understand and approve the access.
+- Avoid public or untrusted networks for testing.
+- Do not assume discovery working means the control and video connections are reachable; those are separate stages.
+
+PhoneCast does not promise that every router, hotspot, VPN, or firewall configuration will work without adjustment.
+
+## Security and privacy
+
+- The connection is initiated by the desktop, but the phone user must approve the request.
+- Android's authentication and \`MediaProjection\` consent are handled through Android's system flows; PhoneCast should not bypass them.
+- Screen capture and remote input should only be used in sessions the phone user has authorized.
+- The architecture is LAN-first and does not require a PhoneCast cloud relay for the core flow.
+- The current control/video design uses TCP sockets. **Do not assume transport encryption is present.** Use a trusted network and avoid sensitive activity until transport security has been explicitly implemented and verified.
+- Keep Android permissions limited to what the current feature requires. Do not commit credentials, signing keys, local machine configuration, or generated secrets.
+
+## Troubleshooting
+
+| Problem | Checks |
 |---|---|
-| Electron | Desktop application shell |
-| Node.js | Desktop backend / runtime |
-| `bonjour-service` | mDNS discovery |
-| Node `net` module | TCP control and video networking |
-| WebCodecs | H.264 decoding |
-| HTML / CSS / JavaScript | User interface |
-| `contextBridge` | Secure IPC bridge between main and renderer |
+| Desktop app does not start | Run \`npm ci\` in \`desktop/\`; verify Node.js/npm; read the terminal error; confirm you ran \`npm start\` from \`desktop/\`. |
+| Gradle sync/build fails | Open the repository root in Android Studio; verify SDK Platform 36 and JDK/Gradle compatibility; retry after SDK installation completes. |
+| Phone is not discovered | Confirm both devices are on the same LAN; keep PhoneCast open on Android; check VPN, guest Wi-Fi/client isolation, and Windows Firewall. |
+| Phone appears but connection fails | Check the desktop terminal and Android logs; confirm the phone is ready to accept requests; verify local traffic is not blocked. |
+| Request is accepted but no video appears | Grant Android screen-capture consent; inspect capture/encoder logs; verify the video connection can reach the desktop. |
+| Video starts but looks broken or freezes | Check device encoder support, network stability, and Electron/Chromium decoding logs. Test on another trusted network if possible. |
+| Remote input does not work | Test the video path first; confirm the session is authorized; check any PhoneCast accessibility/input service and Android permission requested by the app; note that full input coverage is still in development. |
+| ADB cannot see the phone | Reconnect USB, enable USB debugging, accept the phone's authorization dialog, and run \`adb devices\` again. |
 
----
+### Debugging by layer
 
-## Project Structure
+When diagnosing an issue, isolate the stages in order:
 
-> The tree below is the **intended layout**. Update it to match the repository exactly. Do not list folders that do not exist yet.
+1. Discovery — does the desktop see the phone?
+2. Control TCP — can the desktop open the control connection?
+3. Request — did the phone receive the connection request?
+4. Authorization — did the phone user accept?
+5. Android authentication — did the system authentication step complete?
+6. Capture — was \`MediaProjection\` granted and capture started?
+7. Encoding/video transport — did the H.264 stream become available?
+8. Decode/render — did the desktop decode and display frames?
+9. Input — are remote input events being sent and applied?
 
-```
+## Repository layout
+
+\`\`\`text
 PhoneCast/
-│
-├── app/                      # Android source
-│
+├── app/
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       ├── java/com/phonecast/app/
+│       │   ├── MainActivity.kt
+│       │   ├── capture/
+│       │   │   └── ScreenCaptureService.kt
+│       │   ├── network/
+│       │   │   └── PhoneCastDiscovery.kt
+│       │   └── ui/theme/
+│       └── res/
 ├── desktop/
 │   ├── electron/
 │   │   ├── main.js
 │   │   └── preload.js
-│   │
 │   ├── renderer/
 │   │   ├── index.html
-│   │   ├── style.css
 │   │   ├── renderer.js
-│   │   ├── state/
+│   │   ├── style.css
 │   │   ├── core/
-│   │   ├── pages/
 │   │   ├── connection/
-│   │   ├── video/
-│   │   ├── input/            # only if present in the repo
-│   │   └── ui/
-│   │
-│   ├── assets/
+│   │   ├── pages/
+│   │   ├── state/
+│   │   ├── ui/
+│   │   └── video/
 │   ├── package.json
 │   └── package-lock.json
-│
-├── .gitignore
-└── README.md
-```
+├── gradle/
+│   └── wrapper/
+├── gradlew
+├── gradlew.bat
+├── build.gradle.kts
+├── settings.gradle.kts
+├── gradle.properties
+└── Readme.md
+\`\`\`
 
----
+The tree highlights the main entry points; individual files may be added as development progresses.
 
-## User Journeys
+## Technology stack
 
-### Android
+| Component | Technology | Role |
+|---|---|---|
+| Android app | Kotlin, Android SDK, Jetpack Compose | Mobile UI and lifecycle |
+| Device discovery | Android NSD / mDNS | Advertise and find devices on the LAN |
+| Screen capture | \`MediaProjection\` | Obtain user-approved display capture |
+| Video encoding | \`MediaCodec\` | Encode the screen as H.264 |
+| Desktop shell | Electron | Windows desktop application |
+| Desktop runtime | Node.js | Networking and native desktop process |
+| Discovery client | \`bonjour-service\` | Discover the Android service |
+| Control/video networking | Node TCP sockets and Android networking APIs | Exchange control messages and video |
+| Video decoding | WebCodecs | Decode H.264 frames in the desktop renderer |
+| UI | HTML, CSS, JavaScript | Desktop screens and live viewer |
+| Build | Gradle wrapper, Android Gradle Plugin | Android build and APK generation |
 
-**Welcome.** PhoneCast logo, a wireless screen-sharing message, hero artwork, a short introduction, and a continue action.
+## Development and contribution workflow
 
-**Account setup.** Enter a name to create a local account, with an explanation that the data stays on the device.
+1. Create a focused feature or fix branch from the branch you intend to target.
+2. Inspect the current implementation before changing a protocol, permission, or cross-app workflow.
+3. Keep Android and desktop protocol changes compatible.
+4. Run the desktop app and/or Android build for the files you changed.
+5. Test the full phone-to-PC path for networking, capture, video, and input changes.
+6. Update this README when setup steps, protocol behavior, requirements, or supported features change.
+7. Open a pull request with the change summary, test steps, observed results, and known limitations.
 
-**Security.** Device security step with fingerprint/biometric artwork, backed by Android system authentication.
+Useful commands:
 
-**Home.** Greeting, "Ready" status, quick actions, connection requests, connection history, and an empty state when there are no requests.
-
-**Connection request.** The user-facing flow:
-
-```
-Laptop requests
-       ↓
-Phone popup
-       ↓
-Accept / Reject
-       ↓
-Authentication
-       ↓
-MediaProjection
-       ↓
-Casting
-```
-
-### Windows
-
-Include the following **where implemented**:
-
-- Welcome page
-- Account / name flow
-- Password / setup flow
-- Home dashboard
-- Search devices
-- Discovered devices list
-- Connection status
-- Connection history
-- Settings
-- Casting page with live phone viewer
-- Remote input controls
-- Disconnect action
-
-<!-- Delete any item above that does not exist in the app yet. -->
-
----
-
-## Design System
-
-PhoneCast's visual direction is **futuristic, dark, minimal, technical, and premium**.
-
-- Dark charcoal backgrounds
-- Grey cards with rounded corners
-- Neon / electric blue accents with a subtle glow
-- High contrast and clean spacing
-
----
-
-## Setup
-
-### Android development
-
-Requirements:
-
-- Android Studio
-- Android SDK (installed through Android Studio)
-- An Android device (USB debugging enabled) or an emulator
-- JDK / Gradle versions as required by the project's Gradle configuration (add exact versions once confirmed)
-
-Steps:
-
-1. Clone the repository.
-2. In Android Studio choose **Open** and select the Android project folder (`app/` lives inside it).
-3. Let Gradle sync finish.
-4. Select a device and click **Run**.
-
-For discovery to work, the phone must be on the same network as the laptop. Emulators usually sit behind their own virtual network and may not be discoverable from the laptop, so a physical device is the safer choice.
-
-### Windows development
-
-Requirements:
-
-- Node.js and npm
-
-```bash
+\`\`\`powershell
+# Desktop: from repository root
 cd desktop
-npm install
+npm ci
 npm start
-```
 
-<!-- Confirm that `npm start` matches the "scripts" in desktop/package.json. -->
+# Android: from repository root (run separately)
+.\gradlew.bat :app:assembleDebug
+\`\`\`
 
----
+Do not commit generated build output, dependency folders, local SDK configuration, or secrets. The repository's \`.gitignore\` covers common Android/Gradle generated files and local configuration.
 
-## Building
+## Known limitations and roadmap
 
-### Android APK
+### Current limitations
 
-In Android Studio:
+- Local discovery and direct connection depend on the network and firewall.
+- Android permission and foreground-service requirements vary by OS version and device.
+- Encoding and decoding performance depend on device hardware and the Electron/Chromium runtime.
+- Remote input behavior and gesture/keyboard coverage are not guaranteed across all Android devices.
+- The current repository does not document a tested production Windows installer or update mechanism.
+- TCP traffic should be treated as unencrypted unless transport encryption is explicitly added and verified.
 
-**Build → Build APK(s)**
+### Potential next steps
 
-- **Debug APK:** for development and testing. Signed with a debug key.
-- **Release APK:** for distribution. It must be signed with your own key.
+- Improve remote touch, pointer, scroll, and keyboard reliability.
+- Improve reconnection, session cleanup, and diagnostics.
+- Add protocol-level tests and more automated integration coverage.
+- Add secure transport and document the threat model.
+- Add a verified desktop packaging/signing workflow.
+- Explore clipboard/file transfer and other workspace features only after their permissions, privacy model, and end-to-end behavior are implemented.
 
-Never commit keystores, passwords, or signing configuration containing secrets.
+These items are roadmap ideas, not claims about current functionality.
 
-### Windows app
+## License
 
-Production packaging is **not documented yet**. If the project is set up with `electron-builder`, add the actual build script and output location here, for example:
+There is currently no root-level \`LICENSE\` file on the \`main\` branch. The desktop package metadata names MIT, but that alone does not replace a repository license. Until a license is added by the maintainer, do not assume that redistribution or reuse is permitted.
 
-```bash
-cd desktop
-npm run <your-build-script>
-```
-
-Do not describe an installer as available until packaging is configured and tested.
-
----
-
-## Network Requirements
-
-- The phone and the laptop should normally be on the **same local network**.
-- Discovery and direct communication depend on LAN conditions.
-- Possible blockers:
-  - guest Wi-Fi isolation
-  - router / access point client isolation
-  - Windows firewall rules and network profile (Public vs. Private)
-  - unreachable control or video ports
-
-PhoneCast makes no guarantee that any given network will allow discovery or direct connections.
-
----
-
-## Troubleshooting
-
-**Phone is not discovered**
-
-- Confirm both devices are on the same Wi-Fi.
-- Confirm the phone is advertising the service (the app is open and ready).
-- Check for guest-network or client isolation.
-- Restart discovery on the laptop.
-- Check Windows firewall settings.
-
-**Phone appears but the connection fails**
-
-- Verify the IP address shown for the phone.
-- Verify the control port.
-- Inspect the TCP error in the desktop app's logs.
-- Check Windows firewall rules.
-
-**Connected, but the screen does not appear**
-
-- Check whether `MediaProjection` permission was granted.
-- Check whether `VIDEO_STREAM_READY` was sent.
-- Verify the video port is reachable.
-- Inspect H.264 / encoder logs on Android.
-- Inspect decoder errors from WebCodecs on the desktop.
-
-**Touch or keyboard does not work**
-
-- Verify remote input is enabled and the session is authorized.
-- Inspect whether input events are being sent from the desktop.
-- Inspect the Android input mechanism (for example, whether the required service is enabled).
-
----
-
-## Security Considerations
-
-- **LAN-local design.** Communication is between the two devices on the local network. There is no PhoneCast cloud service.
-- **Explicit request and approval.** Sessions begin only after the user accepts on the phone.
-- **Android authentication and `MediaProjection` consent.** Both are required and handled by Android.
-- **Remote input is limited to authorized sessions.**
-
-Security boundaries depend on Android, Windows, network configuration, and implementation details.
-
-**Transparency note:** unless TLS or other transport encryption is implemented and documented here, **do not assume network traffic is encrypted**. Anyone able to observe traffic on the same network may be able to see it. Use PhoneCast on networks you trust. If encryption is added later, document it in this section.
-
----
-
-## Limitations
-
-- Phone and laptop must be able to reach each other over the LAN.
-- Network isolation or firewall rules can prevent discovery or connection.
-- Android permission requirements apply (`MediaProjection`, local authentication, and whatever the input mechanism requires).
-- Encoder performance varies by device.
-- WebCodecs availability and H.264 decoding support depend on the Electron / Chromium version and the system.
-- Android restricts how remote input can be injected, and behavior may differ across Android versions.
-- Achievable resolution and frame rate are hardware dependent.
-
----
-
-## Performance
-
-PhoneCast is designed to target low-latency, high-quality streaming, subject to device and network capabilities.
-
-The design choices that serve that goal:
-
-- hardware H.264 encoding on the phone
-- preferred hardware-accelerated decoding on the laptop
-- separate control and video channels
-- efficient binary transport for video
-
-No FPS, resolution, or latency figures are promised. If you measure them, add the results here together with the test setup (devices, Wi-Fi band, resolution, bitrate).
-
----
-
-## Current Status
-
-> Review this section before publishing. Move items between columns so it reflects what you have actually verified.
-
-### ✅ Implemented / working
-
-- Android onboarding, local account, and system authentication
-- NSD advertising on Android and mDNS discovery on Windows
-- Laptop-initiated `CONNECTION_REQUEST` with phone-side accept / reject
-- `MediaProjection` consent and screen capture
-- H.264 hardware encoding and video TCP server
-- Separate control and video channels with the packet formats above
-- H.264 decoding with WebCodecs and live canvas rendering
-- Session termination
-
-### 🚧 In progress
-
-- Remote touch input (coordinate mapping, gesture coverage)
-- Keyboard input and special keys
-- Shortcut handling
-
-### 🔮 Planned
-
-See the [Roadmap](#roadmap).
-
----
-
-## Roadmap
-
-These are **future ideas**, not existing features.
-
-**Core**
-- Improved reconnect behavior
-- Session reliability
-
-**Remote control**
-- Richer touch gestures and multi-touch
-- Keyboard improvements
-- Shortcut customization
-
-**Performance**
-- Exploration of UDP / lower-latency video transport
-- Adaptive bitrate
-- FPS controls
-- Latency telemetry
-
-**Utility**
-- Clipboard synchronization
-- File transfer
-- Screenshots
-- Drag and drop
-- Recording
-
-**UX**
-- Settings
-- Device trust and remembered devices
-- Polished installer
-- Improved onboarding
-
----
-
-## Development Philosophy
-
-Development is incremental:
-
-```
-Build one subsystem → test → fix errors → verify → continue
-```
-
-PhoneCast combines networking, Android system permissions, video streaming, desktop rendering, and remote input. Changing several unrelated subsystems at once makes failures hard to localize, so changes are kept small and verified one layer at a time.
-
----
-
-## Debugging Architecture
-
-When something fails, work down this list. Each question isolates one layer.
-
-| Layer | Question |
-|---|---|
-| Discovery | Can the laptop find the phone? |
-| TCP | Can the laptop connect? |
-| Control | Was `CONNECTION_REQUEST` sent? |
-| Authorization | Did the phone accept? |
-| Authentication | Did local Android authentication succeed? |
-| Capture | Did `MediaProjection` start? |
-| Video | Did the H.264 stream start? |
-| Decode | Did WebCodecs decode frames? |
-| Render | Did a frame appear on the canvas? |
-| Input | Did the phone receive touch / keyboard input? |
-
----
-
-## Contributing
-
-1. Fork or clone the repository.
-2. Create a branch for your change.
-3. Get familiar with both the Android and the desktop side.
-4. Make focused changes.
-5. Test both sides where applicable.
-6. Document any protocol changes in this README.
-7. Open a pull request.
-
----
-
-## Repository Hygiene
-
-Do not commit generated, dependency, or secret files, for example:
-
-```
-node_modules/
-build/
-.gradle/
-local.properties
-*.jks / *.keystore
-private secrets
-```
-
-Never upload release keystores or signing credentials.
-
----
-
-## Author
+## Maintainer
 
 **Yash Takalkar**
 
-- GitHub: [Yash-0608](https://github.com/Yash-0608)
+- GitHub: [@Yash-0608](https://github.com/Yash-0608)
 - LinkedIn: [yash-takalkar](https://linkedin.com/in/yash-takalkar-5a364a284)
 - Portfolio: [portfolio-website-one-xi-92.vercel.app](https://portfolio-website-one-xi-92.vercel.app)
