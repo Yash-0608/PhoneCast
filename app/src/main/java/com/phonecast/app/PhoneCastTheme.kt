@@ -34,13 +34,13 @@ object PhoneCastColors {
      */
 
     val Background =
-        Color(0xFF050A0F)
+        Color(0xFF0B0907)
 
     val BackgroundSecondary =
-        Color(0xFF071018)
+        Color(0xFF120E0A)
 
     val BackgroundTertiary =
-        Color(0xFF0A151E)
+        Color(0xFF1B140E)
 
 
     /*
@@ -48,33 +48,33 @@ object PhoneCastColors {
      */
 
     val Card =
-        Color(0xFF0B141C)
+        Color(0xE617120D)
 
     val CardSecondary =
-        Color(0xFF101B24)
+        Color(0xE6211810)
 
     val CardElevated =
-        Color(0xFF121E28)
+        Color(0xED2A1E14)
 
 
     /*
-     * PhoneCast blue
+     * PhoneCast champagne / brass
      */
 
     val NeonBlue =
-        Color(0xFF00A8FF)
+        Color(0xFFD7A45B)
 
     val BrightBlue =
-        Color(0xFF36B8FF)
+        Color(0xFFEBC17C)
 
     val SoftBlue =
-        Color(0xFF66C9FF)
+        Color(0xFFF6DDAA)
 
     val DarkBlue =
-        Color(0xFF06243A)
+        Color(0xFF6E482B)
 
     val DeepBlue =
-        Color(0xFF031725)
+        Color(0xFF100B08)
 
 
     /*
@@ -82,19 +82,19 @@ object PhoneCastColors {
      */
 
     val White =
-        Color(0xFFF1F7FC)
+        Color(0xFFF9F1E4)
 
     val PrimaryText =
-        Color(0xFFE7F2F9)
+        Color(0xFFF1E3CF)
 
     val SecondaryText =
-        Color(0xFF91A5B6)
+        Color(0xFFB5A18A)
 
     val MutedText =
-        Color(0xFF64798A)
+        Color(0xFF84705B)
 
     val DisabledText =
-        Color(0xFF435563)
+        Color(0xFF5D4D3E)
 
 
     /*
@@ -102,13 +102,13 @@ object PhoneCastColors {
      */
 
     val Border =
-        Color(0xFF193346)
+        Color(0xFF3B2A1A)
 
     val BorderBright =
-        Color(0xFF24506C)
+        Color(0xFF735231)
 
     val BorderBlue =
-        Color(0xFF007DBD)
+        Color(0xFFA87542)
 
 
     /*
@@ -116,22 +116,22 @@ object PhoneCastColors {
      */
 
     val Success =
-        Color(0xFF16D66B)
+        Color(0xFF34C786)
 
     val SuccessBackground =
-        Color(0xFF092C1B)
+        Color(0xFF102C1D)
 
     val Warning =
-        Color(0xFFFFB020)
+        Color(0xFFE5AD64)
 
     val WarningBackground =
-        Color(0xFF30240A)
+        Color(0xFF322315)
 
     val Error =
-        Color(0xFFFF4D67)
+        Color(0xFFE47769)
 
     val ErrorBackground =
-        Color(0xFF32121A)
+        Color(0xFF321712)
 
 
     /*
@@ -139,10 +139,10 @@ object PhoneCastColors {
      */
 
     val Glass =
-        Color(0xCC0B141C)
+        Color(0xCC17120D)
 
     val GlassLight =
-        Color(0xCC101B24)
+        Color(0xCC211810)
 
     val Overlay =
         Color(0x99000000)

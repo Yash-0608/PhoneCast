@@ -60,6 +60,15 @@ fun SecurityScreen(
             )
     ) {
 
+        Image(
+            painter = painterResource(id = R.drawable.phonecast_warm_mountains),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(0.15f),
+            contentScale = ContentScale.Crop
+        )
+
         /*
          * -----------------------------------------------------
          * BACKGROUND GLOW
@@ -242,6 +251,9 @@ fun SecurityScreen(
                     contentDescription = "Fingerprint security",
                     modifier = Modifier
                         .size(190.dp),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                        PhoneCastColors.NeonBlue
+                    ),
                     contentScale = ContentScale.Fit
                 )
             }

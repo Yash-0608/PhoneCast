@@ -1,0 +1,128 @@
+name: PhoneCast UI and Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - design/warm-premium-ui
+  pull_request:
+    branches:
+      - feature/touch-mode-phase-1
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate desktop UI and build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install desktop dependencies
+        run: npm ci --prefix desktop
+
+      - name: Check desktop Electron syntax
+        run: node --check desktop/electron/main.js
+
+      - name: Check desktop ES module syntax
+        shell: bash
+        run: |
+          node --input-type=module --check < desktop/renderer/renderer.js
+          node --input-type=module --check < desktop/renderer/pages/pages.js
+          node --input-type=module --check < desktop/renderer/connection/connection.js
+          node --input-type=module --check < desktop/renderer/core/events.js
+          node --input-type=module --check < desktop/renderer/core/navigation.js
+          node --input-type=module --check < desktop/renderer/state/appState.js
+          node --input-type=module --check < desktop/renderer/video/video.js
+
+      - name: Check stylesheet structure and palette
+        run: |
+          node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            const css = readFileSync('desktop/renderer/style.css', 'utf8');
+            let depth = 0;
+            for (const ch of css) {
+              if (ch === '{') depth++;
+              if (ch === '}') depth--;
+              if (depth < 0) throw new Error('Unexpected closing CSS brace');
+            }
+            if (depth !== 0) throw new Error('CSS braces are unbalanced');
+            const legacyCoolPalette = [
+              '#00a8ff', '#19c3ff', '#006bb7', '#078ce8', '#04b0f0',
+              '#071521', '#0b1c2a', '#0d2130', '#8ea6b8',
+              'rgba(67, 171, 225', 'rgba(0, 137, 232'
+            ];
+            const found = legacyCoolPalette.filter(token =>
+              css.toLowerCase().includes(token.toLowerCase())
+            );
+            if (found.length) {
+              throw new Error('Legacy cool-toned palette remains: ' + found.join(', '));
+            }
+            for (const token of ['--pc-panel: #1b1510', '--pc-panel-raised: #211912', '--pc-panel-soft: #2a2118']) {
+              if (!css.toLowerCase().includes(token)) {
+                throw new Error('Missing warm control-centre token: ' + token);
+              }
+            }
+            console.log('CSS structure and warm palette checks passed.');
+          "
+
+      - name: Check Android XML and SVG resources
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          candidates = [
+              Path('app/src/main/AndroidManifest.xml'),
+              Path('app/src/main/res/values/colors.xml'),
+              Path('app/src/main/res/values/themes.xml'),
+              Path('app/src/main/res/drawable/ic_launcher_background.xml'),
+              Path('app/src/main/res/drawable/ic_launcher_foreground.xml'),
+              Path('app/src/main/res/drawable-nodpi/phonecast_warm_mountains.xml'),
+              Path('desktop/renderer/assets/phonecast-mark.svg'),
+              Path('desktop/renderer/assets/phonecast-icons.svg'),
+              Path('desktop/renderer/assets/phonecast-warm-mountains.svg'),
+          ]
+          for file in candidates:
+              ET.parse(file)
+              print(f'XML/SVG OK: {file}')
+          PY
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Build Android debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon :app:assembleDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: phonecast-android-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
